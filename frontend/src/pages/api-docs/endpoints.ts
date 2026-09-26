@@ -2187,6 +2187,28 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/xray/addOutboundRelay',
+        summary:
+          'Quick-add a client-facing relay: parses a share-link or raw outbound JSON, adds it to the Xray template as a single-member balanced outbound, and creates a matching VLESS+TCP+REALITY inbound (real key pair, live-probed REALITY-feasible destination) whose traffic exits through it via a generated routing rule.',
+        params: [
+          {
+            name: 'config',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'Share-link (vless://, vmess://, trojan://, ss://, hysteria2://, wireguard://) or a raw Xray outbound JSON object (required).',
+          },
+          {
+            name: 'remark',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'Optional label; also shapes the generated tag/inbound remark.',
+            optional: true,
+          },
+        ],
+        body: '{"config":"vless://...","remark":"my-relay"}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/xray/resetOutboundsTraffic',
         summary: 'Reset traffic counters for a specific outbound by tag.',
         params: [
