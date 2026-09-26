@@ -2137,7 +2137,27 @@
         "poolSize": "اندازه استخر"
       },
       "defaultOutbound": "خروجی پیش‌فرض",
-      "defaultOutboundDesc": "ترافیکی که با هیچ قانون مسیریابی جور نشود از این خروجی استفاده می‌کند (اولین خروجی در فهرست)."
+      "defaultOutboundDesc": "ترافیکی که با هیچ قانون مسیریابی جور نشود از این خروجی استفاده می‌کند (اولین خروجی در فهرست).",
+      "outboundRelay": {
+        "menu": "افزودن سریع رله",
+        "title": "افزودن سریع رله",
+        "desc": "یه لینک اشتراک یا JSON خام اوتباند رو پیست کن. یه outbound بالانس‌شده، یه routing rule، و یه اینباند جدید VLESS+REALITY (با هدفی که از قبل تست شده) خودکار ساخته می‌شه.",
+        "configLabel": "کانفیگ اوتباند",
+        "configPlaceholder": "vless://... یا {\"protocol\":\"vless\",...}",
+        "remarkLabel": "یادداشت (اختیاری)",
+        "remarkPlaceholder": "مثلاً relay-de",
+        "submit": "ساخت رله",
+        "toastAdded": "رله ساخته شد",
+        "toastFailed": "ساخت رله ناموفق بود",
+        "resultTitle": "رله آماده‌ست",
+        "resultPort": "پورت",
+        "resultClientId": "UUID کلاینت",
+        "resultPublicKey": "کلید عمومی REALITY",
+        "resultShortId": "شناسه‌ی کوتاه REALITY",
+        "resultServerName": "نام سرور (SNI)",
+        "resultTarget": "هدف REALITY",
+        "done": "تمام"
+      }
     },
     "hosts": {
       "addHost": "افزودن میزبان",

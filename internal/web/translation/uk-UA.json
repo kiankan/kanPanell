@@ -2137,7 +2137,27 @@
         "poolSize": "Розмір пулу"
       },
       "defaultOutbound": "Вихідний за замовчуванням",
-      "defaultOutboundDesc": "Трафік без збігу з правилами маршрутизації йде через цей вихідний (перший у списку)."
+      "defaultOutboundDesc": "Трафік без збігу з правилами маршрутизації йде через цей вихідний (перший у списку).",
+      "outboundRelay": {
+        "menu": "Quick Add Relay",
+        "title": "Quick Add Relay",
+        "desc": "Paste a share-link or a raw outbound JSON. A balanced outbound, routing rule, and a new VLESS+REALITY inbound (with a live-probed destination) are created automatically.",
+        "configLabel": "Outbound config",
+        "configPlaceholder": "vless://... or {\"protocol\":\"vless\",...}",
+        "remarkLabel": "Remark (optional)",
+        "remarkPlaceholder": "e.g. relay-de",
+        "submit": "Create relay",
+        "toastAdded": "Relay created",
+        "toastFailed": "Failed to create relay",
+        "resultTitle": "Relay ready",
+        "resultPort": "Port",
+        "resultClientId": "Client UUID",
+        "resultPublicKey": "REALITY public key",
+        "resultShortId": "REALITY short id",
+        "resultServerName": "Server name (SNI)",
+        "resultTarget": "REALITY target",
+        "done": "Done"
+      }
     },
     "hosts": {
       "addHost": "Додати хост",

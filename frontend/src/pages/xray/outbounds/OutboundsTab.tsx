@@ -131,6 +131,18 @@ export default function OutboundsTab({
   const [editingOutbound, setEditingOutbound] = useState<Record<string, unknown> | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [existingTags, setExistingTags] = useState<string[]>([]);
+  const [relayOpen, setRelayOpen] = useState(false);
+  const [relayConfig, setRelayConfig] = useState('');
+  const [relayRemark, setRelayRemark] = useState('');
+  const [relaySaving, setRelaySaving] = useState(false);
+  const [relayResult, setRelayResult] = useState<{
+    port: number;
+    clientId: string;
+    realityPublicKey: string;
+    realityShortId: string;
+    realityServerName: string;
+    realityTarget: string;
+  } | null>(null);
 
   // Subscription manager (CRUD + reorder + refresh + preview)
   const [subDrawerOpen, setSubDrawerOpen] = useState(false);
@@ -422,6 +434,40 @@ export default function OutboundsTab({
       setSavingSub(false);
     }
   }
+  async function submitRelay() {
+    if (!relayConfig.trim()) return;
+    setRelaySaving(true);
+    try {
+      const r = await HttpUtil.post<{
+        port: number;
+        clientId: string;
+        realityPublicKey: string;
+        realityShortId: string;
+        realityServerName: string;
+        realityTarget: string;
+      }>('/panel/api/xray/addOutboundRelay', {
+        config: relayConfig.trim(),
+        remark: relayRemark.trim(),
+      });
+      if (r?.success && r.obj) {
+        messageApi.success(t('pages.xray.outboundRelay.toastAdded'));
+        setRelayResult(r.obj);
+        onRefreshXrayData?.();
+      } else {
+        messageApi.error(r?.msg || t('pages.xray.outboundRelay.toastFailed'));
+      }
+    } catch {
+      messageApi.error(t('pages.xray.outboundRelay.toastFailed'));
+    } finally {
+      setRelaySaving(false);
+    }
+  }
+  function closeRelayModal() {
+    setRelayOpen(false);
+    setRelayConfig('');
+    setRelayRemark('');
+    setRelayResult(null);
+  }
   async function previewSub() {
     if (!newSub.url.trim()) {
       messageApi.warning(t('pages.xray.outboundSub.toastUrlRequired'));
@@ -571,6 +617,12 @@ export default function OutboundsTab({
                       icon: <ApiOutlined />,
                       label: t('pages.xray.pia.menu'),
                       onClick: onShowPia,
+                    },
+                    {
+                      key: 'relay',
+                      icon: <RetweetOutlined />,
+                      label: t('pages.xray.outboundRelay.menu'),
+                      onClick: () => setRelayOpen(true),
                     },
                     { type: 'divider' },
                     {
@@ -1000,6 +1052,73 @@ export default function OutboundsTab({
             </div>
           </div>
         </Space>
+      </Modal>
+
+      <Modal
+        title={t('pages.xray.outboundRelay.title')}
+        open={relayOpen}
+        onCancel={closeRelayModal}
+        footer={null}
+        width={isMobile ? '100%' : 520}
+        destroyOnHidden
+      >
+        {relayResult ? (
+          <Space orientation="vertical" style={{ width: '100%' }} size="small">
+            <div style={{ fontSize: 13, color: '#666' }}>
+              {t('pages.xray.outboundRelay.resultTitle')}
+            </div>
+            {(
+              [
+                ['resultPort', String(relayResult.port)],
+                ['resultClientId', relayResult.clientId],
+                ['resultPublicKey', relayResult.realityPublicKey],
+                ['resultShortId', relayResult.realityShortId],
+                ['resultServerName', relayResult.realityServerName],
+                ['resultTarget', relayResult.realityTarget],
+              ] as const
+            ).map(([key, value]) => (
+              <div key={key}>
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>
+                  {t(`pages.xray.outboundRelay.${key}`)}
+                </div>
+                <Input readOnly value={value} onFocus={(e) => e.currentTarget.select()} />
+              </div>
+            ))}
+            <Button type="primary" block onClick={closeRelayModal}>
+              {t('pages.xray.outboundRelay.done')}
+            </Button>
+          </Space>
+        ) : (
+          <Space orientation="vertical" style={{ width: '100%' }} size="middle">
+            <div style={{ fontSize: 13, color: '#666' }}>{t('pages.xray.outboundRelay.desc')}</div>
+            <div>
+              <div style={{ marginBottom: 4 }}>{t('pages.xray.outboundRelay.configLabel')}</div>
+              <Input.TextArea
+                rows={4}
+                value={relayConfig}
+                onChange={(e) => setRelayConfig(e.target.value)}
+                placeholder={t('pages.xray.outboundRelay.configPlaceholder')}
+              />
+            </div>
+            <div>
+              <div style={{ marginBottom: 4 }}>{t('pages.xray.outboundRelay.remarkLabel')}</div>
+              <Input
+                value={relayRemark}
+                onChange={(e) => setRelayRemark(e.target.value)}
+                placeholder={t('pages.xray.outboundRelay.remarkPlaceholder')}
+              />
+            </div>
+            <Button
+              type="primary"
+              block
+              loading={relaySaving}
+              disabled={!relayConfig.trim()}
+              onClick={submitRelay}
+            >
+              {t('pages.xray.outboundRelay.submit')}
+            </Button>
+          </Space>
+        )}
       </Modal>
     </>
   );

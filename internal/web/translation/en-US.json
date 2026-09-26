@@ -2255,7 +2255,27 @@
         "poolSize": "Pool Size"
       },
       "defaultOutbound": "Default Outbound",
-      "defaultOutboundDesc": "Traffic that does not match any routing rule uses this outbound (Xray uses the first outbound in the list)."
+      "defaultOutboundDesc": "Traffic that does not match any routing rule uses this outbound (Xray uses the first outbound in the list).",
+      "outboundRelay": {
+        "menu": "Quick Add Relay",
+        "title": "Quick Add Relay",
+        "desc": "Paste a share-link or a raw outbound JSON. A balanced outbound, routing rule, and a new VLESS+REALITY inbound (with a live-probed destination) are created automatically.",
+        "configLabel": "Outbound config",
+        "configPlaceholder": "vless://... or {\"protocol\":\"vless\",...}",
+        "remarkLabel": "Remark (optional)",
+        "remarkPlaceholder": "e.g. relay-de",
+        "submit": "Create relay",
+        "toastAdded": "Relay created",
+        "toastFailed": "Failed to create relay",
+        "resultTitle": "Relay ready",
+        "resultPort": "Port",
+        "resultClientId": "Client UUID",
+        "resultPublicKey": "REALITY public key",
+        "resultShortId": "REALITY short id",
+        "resultServerName": "Server name (SNI)",
+        "resultTarget": "REALITY target",
+        "done": "Done"
+      }
     }
   },
   "tgbot": {
