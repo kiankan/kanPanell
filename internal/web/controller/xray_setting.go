@@ -57,6 +57,7 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/balancerStatus", a.balancerStatus)
 	g.POST("/balancerOverride", a.balancerOverride)
 	g.POST("/routeTest", a.routeTest)
+	g.POST("/addOutboundRelay", a.addOutboundRelay)
 
 	g.GET("/geodata/files", a.geodataFiles)
 	g.GET("/geodata/categories", a.geodataCategories)
@@ -328,6 +329,27 @@ func (a *XraySettingController) testOutbound(c *gin.Context) {
 		return
 	}
 
+	jsonObj(c, result, nil)
+}
+
+// addOutboundRelay is the "quick add" endpoint: it accepts a share-link or
+// raw outbound JSON, adds it to the Xray template as a balanced outbound,
+// and creates a matching VLESS+TCP+REALITY inbound clients connect to.
+// JSON body: {"config": "<share-link or outbound JSON>", "remark": "<optional>"}.
+func (a *XraySettingController) addOutboundRelay(c *gin.Context) {
+	var req service.AddOutboundRelayRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+
+	result, err := a.XraySettingService.AddRelay(req)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+
+	a.XrayService.SetToNeedRestart()
 	jsonObj(c, result, nil)
 }
 
