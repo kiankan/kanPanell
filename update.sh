@@ -10,7 +10,7 @@ xui_folder="${XUI_MAIN_FOLDER:=/usr/local/x-ui}"
 xui_service="${XUI_SERVICE:=/etc/systemd/system}"
 # GitHub "owner/repo" to install from/update against. Override with
 # XUI_REPO=owner/repo if you maintain your own fork.
-repo="${XUI_REPO:=kiankan/kanPanel}"
+repo="${XUI_REPO:=kiankan/kanPanell}"
 
 # Don't edit this config
 b_source="${BASH_SOURCE[0]}"

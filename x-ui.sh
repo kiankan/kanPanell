@@ -8,7 +8,7 @@ plain='\033[0m'
 
 # GitHub "owner/repo" to install from/update against. Override with
 # XUI_REPO=owner/repo if you maintain your own fork.
-repo="${XUI_REPO:=kiankan/kanPanel}"
+repo="${XUI_REPO:=kiankan/kanPanell}"
 
 #Add some basic function here
 function LOGD() {
@@ -255,7 +255,7 @@ legacy_version() {
         exit 1
     fi
     # Use the entered panel version in the download link
-    install_command="bash <(curl -Ls "https://raw.githubusercontent.com/mhsanaei/3x-ui/v$tag_version/install.sh") v$tag_version"
+    install_command="bash <(curl -Ls "https://raw.githubusercontent.com/kiankan/kanPanell/v$tag_version/install.sh") v$tag_version"
 
     echo "Downloading and installing panel version $tag_version..."
     eval $install_command
@@ -320,7 +320,7 @@ uninstall() {
     echo ""
     echo -e "Uninstalled Successfully.\n"
     echo "If you need to install this panel again, you can use below command:"
-    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)${plain}"
+    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/kiankan/kanPanell/main/install.sh)${plain}"
     echo ""
     # Trap the SIGTERM signal
     trap delete_script SIGTERM
