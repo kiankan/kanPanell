@@ -2319,7 +2319,10 @@
       "usageDesc": "Lihat pemakaian klien: /usage email",
       "inboundDesc": "Cari inbound: /inbound nama (admin)",
       "restartDesc": "Mulai ulang inti Xray (admin)",
-      "clearallDesc": "Reset trafik semua klien (admin)"
+      "clearallDesc": "Reset trafik semua klien (admin)",
+      "updateStarted": "🔄 Panel update started. The panel will restart automatically in a moment; you may briefly lose connection.",
+      "updateFailed": "❗ Failed to start the panel update.\r\n\r\n<code>Error: {{ .Error }}</code>.",
+      "updateDesc": "Update the panel itself (admin)"
     },
     "messages": {
       "cpuThreshold": "Beban CPU {{ .Percent }}% melebihi batas {{ .Threshold }}%",

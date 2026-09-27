@@ -2319,7 +2319,10 @@
       "usageDesc": "Показать трафик клиента: /usage email",
       "inboundDesc": "Поиск входящих: /inbound имя (админ)",
       "restartDesc": "Перезапустить ядро Xray (админ)",
-      "clearallDesc": "Сбросить трафик всех клиентов (админ)"
+      "clearallDesc": "Сбросить трафик всех клиентов (админ)",
+      "updateStarted": "🔄 Panel update started. The panel will restart automatically in a moment; you may briefly lose connection.",
+      "updateFailed": "❗ Failed to start the panel update.\r\n\r\n<code>Error: {{ .Error }}</code>.",
+      "updateDesc": "Update the panel itself (admin)"
     },
     "messages": {
       "cpuThreshold": "Загрузка процессора составляет {{ .Percent }}%, что превышает пороговое значение {{ .Threshold }}%",

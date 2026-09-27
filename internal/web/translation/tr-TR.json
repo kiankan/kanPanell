@@ -2319,7 +2319,10 @@
       "usageDesc": "İstemci kullanımını göster: /usage e-posta",
       "inboundDesc": "Gelenleri ara: /inbound ad (yönetici)",
       "restartDesc": "Xray çekirdeğini yeniden başlat (yönetici)",
-      "clearallDesc": "Tüm istemcilerin trafiğini sıfırla (yönetici)"
+      "clearallDesc": "Tüm istemcilerin trafiğini sıfırla (yönetici)",
+      "updateStarted": "🔄 Panel update started. The panel will restart automatically in a moment; you may briefly lose connection.",
+      "updateFailed": "❗ Failed to start the panel update.\r\n\r\n<code>Error: {{ .Error }}</code>.",
+      "updateDesc": "Update the panel itself (admin)"
     },
     "messages": {
       "cpuThreshold": "CPU Yükü ({{ .Percent }}%), {{ .Threshold }}% eşiğini aşıyor",

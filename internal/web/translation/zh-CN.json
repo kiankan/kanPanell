@@ -2319,7 +2319,10 @@
       "usageDesc": "查看客户端用量：/usage 邮箱",
       "inboundDesc": "搜索入站：/inbound 备注（管理员）",
       "restartDesc": "重启 Xray 内核（管理员）",
-      "clearallDesc": "重置所有客户端流量（管理员）"
+      "clearallDesc": "重置所有客户端流量（管理员）",
+      "updateStarted": "🔄 Panel update started. The panel will restart automatically in a moment; you may briefly lose connection.",
+      "updateFailed": "❗ Failed to start the panel update.\r\n\r\n<code>Error: {{ .Error }}</code>.",
+      "updateDesc": "Update the panel itself (admin)"
     },
     "messages": {
       "cpuThreshold": "CPU 使用率为 {{ .Percent }}%，超过阈值 {{ .Threshold }}%",
