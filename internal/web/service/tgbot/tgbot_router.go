@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -268,6 +269,17 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 			} else {
 				handleUnknownCommand()
 				msg += t.I18nBot("tgbot.commands.restartUsage")
+			}
+		} else {
+			handleUnknownCommand()
+		}
+	case "update":
+		onlyMessage = true
+		if isAdmin {
+			if _, err := (&panel.PanelService{}).StartUpdate(); err != nil {
+				msg += t.I18nBot("tgbot.commands.updateFailed", "Error=="+err.Error())
+			} else {
+				msg += t.I18nBot("tgbot.commands.updateStarted")
 			}
 		} else {
 			handleUnknownCommand()

@@ -385,6 +385,7 @@ func (t *Tgbot) trySetBotCommands(bot *telego.Bot) {
 			{Command: "usage", Description: t.I18nBot("tgbot.commands.usageDesc")},
 			{Command: "inbound", Description: t.I18nBot("tgbot.commands.inboundDesc")},
 			{Command: "restart", Description: t.I18nBot("tgbot.commands.restartDesc")},
+			{Command: "update", Description: t.I18nBot("tgbot.commands.updateDesc")},
 			{Command: "clearall", Description: t.I18nBot("tgbot.commands.clearallDesc")},
 		},
 	})

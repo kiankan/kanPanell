@@ -2306,11 +2306,13 @@
       "status": "✅ ربات در حالت عادی است!",
       "usage": "❗ لطفاً یک متن برای جستجو وارد کنید!",
       "getID": "🆔 شناسه شما: <code>{{ .ID }}</code>",
-      "helpAdminCommands": "برای راه‌اندازی مجدد Xray Core:\r\n<code>/restart</code>\r\n\r\nبرای جستجوی ایمیل مشتری:\r\n<code>/usage [ایمیل]</code>\r\n\r\nبرای جستجوی ورودی‌ها (با آمار مشتری):\r\n<code>/inbound [توضیحات]</code>\r\n\r\nشناسه گفتگوی تلگرام:\r\n<code>/id</code>",
+      "helpAdminCommands": "برای راه‌اندازی مجدد Xray Core:\r\n<code>/restart</code>\r\n\r\nبرای به‌روزرسانی خود پنل:\r\n<code>/update</code>\r\n\r\nبرای جستجوی ایمیل مشتری:\r\n<code>/usage [ایمیل]</code>\r\n\r\nبرای جستجوی ورودی‌ها (با آمار مشتری):\r\n<code>/inbound [توضیحات]</code>\r\n\r\nشناسه گفتگوی تلگرام:\r\n<code>/id</code>",
       "helpClientCommands": "برای جستجوی آمار، از دستور زیر استفاده کنید:\r\n<code>/usage [ایمیل]</code>\r\n\r\nشناسه گفتگوی تلگرام:\r\n<code>/id</code>",
       "restartUsage": "\r\n\r\n<code>/restart</code>",
       "restartSuccess": "✅ عملیات با موفقیت انجام شد!",
       "restartFailed": "❗ خطا در عملیات.\r\n\r\n<code>خطا: {{ .Error }}</code>.",
+      "updateStarted": "🔄 به‌روزرسانی پنل آغاز شد. پنل به‌زودی خودش را ری‌استارت می‌کند؛ ممکن است اتصال برای لحظه‌ای قطع شود.",
+      "updateFailed": "❗ شروع به‌روزرسانی پنل ناموفق بود.\r\n\r\n<code>خطا: {{ .Error }}</code>.",
       "xrayNotRunning": "❗ Xray Core در حال اجرا نیست.",
       "startDesc": "نمایش منوی اصلی",
       "helpDesc": "راهنمای ربات",
@@ -2319,6 +2321,7 @@
       "usageDesc": "مشاهده مصرف کاربر: /usage ایمیل",
       "inboundDesc": "جستجوی ورودی‌ها: /inbound نام (مدیر)",
       "restartDesc": "راه‌اندازی مجدد هسته Xray (مدیر)",
+      "updateDesc": "به‌روزرسانی خود پنل (مدیر)",
       "clearallDesc": "صفر کردن ترافیک همه کاربران (مدیر)"
     },
     "messages": {
