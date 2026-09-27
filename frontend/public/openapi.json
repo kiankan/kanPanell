@@ -13238,6 +13238,63 @@
         }
       }
     },
+    "/panel/api/xray/addOutboundRelay": {
+      "post": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "Quick-add a client-facing relay: parses a share-link or raw outbound JSON, adds it to the Xray template as a single-member balanced outbound, and creates a matching VLESS+TCP+REALITY inbound (real key pair, live-probed REALITY-feasible destination) whose traffic exits through it via a generated routing rule.",
+        "operationId": "post_panel_api_xray_addOutboundRelay",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "config": {
+                    "type": "string",
+                    "description": "Share-link (vless://, vmess://, trojan://, ss://, hysteria2://, wireguard://) or a raw Xray outbound JSON object (required)."
+                  },
+                  "remark": {
+                    "type": "string",
+                    "description": "Optional label; also shapes the generated tag/inbound remark."
+                  }
+                },
+                "required": [
+                  "config"
+                ]
+              },
+              "example": {
+                "config": "vless://...",
+                "remark": "my-relay"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/xray/resetOutboundsTraffic": {
       "post": {
         "tags": [
