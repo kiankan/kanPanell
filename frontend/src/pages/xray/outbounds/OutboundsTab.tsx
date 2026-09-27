@@ -445,10 +445,14 @@ export default function OutboundsTab({
         realityShortId: string;
         realityServerName: string;
         realityTarget: string;
-      }>('/panel/api/xray/addOutboundRelay', {
-        config: relayConfig.trim(),
-        remark: relayRemark.trim(),
-      });
+      }>(
+        '/panel/api/xray/addOutboundRelay',
+        {
+          config: relayConfig.trim(),
+          remark: relayRemark.trim(),
+        },
+        { headers: { 'Content-Type': 'application/json' } },
+      );
       if (r?.success && r.obj) {
         messageApi.success(t('pages.xray.outboundRelay.toastAdded'));
         setRelayResult(r.obj);
