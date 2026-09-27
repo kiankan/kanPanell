@@ -108,6 +108,11 @@ jobs:
           LDFLAGS="-w -s -linkmode external -extldflags '-static'"
           if [[ "$GITHUB_REF" != refs/tags/* ]]; then
             LDFLAGS="$LDFLAGS -X github.com/mhsanaei/3x-ui/v3/internal/config.buildCommit=${GITHUB_SHA::8} -X github.com/mhsanaei/3x-ui/v3/internal/config.buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          else
+            # Stable tag build: stamp the exact tag (minus the leading "v") as
+            # the panel's own version, so it always matches the release it
+            # came from instead of depending on a manually bumped VERSION file.
+            LDFLAGS="$LDFLAGS -X github.com/mhsanaei/3x-ui/v3/internal/config.version=${GITHUB_REF_NAME#v}"
           fi
           go build -buildvcs=true -ldflags "$LDFLAGS" -o xui-release -v .
           file xui-release
@@ -296,6 +301,8 @@ jobs:
           LDFLAGS="-w -s"
           if [[ "$GITHUB_REF" != refs/tags/* ]]; then
             LDFLAGS="$LDFLAGS -X github.com/mhsanaei/3x-ui/v3/internal/config.buildCommit=${GITHUB_SHA:0:8} -X github.com/mhsanaei/3x-ui/v3/internal/config.buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          else
+            LDFLAGS="$LDFLAGS -X github.com/mhsanaei/3x-ui/v3/internal/config.version=${GITHUB_REF_NAME#v}"
           fi
           go build -buildvcs=true -ldflags "$LDFLAGS" -o xui-release.exe -v .
 

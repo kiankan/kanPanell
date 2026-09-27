@@ -15,7 +15,21 @@ import (
 )
 
 //go:embed version
+var embeddedVersion string
+
+// version is the panel's own release version. Stable tag builds set it via
+// `-ldflags -X` from the git tag itself (see .github/workflows/release.yml),
+// so the running binary always reports exactly the tag it was built from;
+// nothing has to remember to keep a checked-in file in sync with the latest
+// tag. A plain `go build` (no ldflags) falls back to the embedded `version`
+// file below, which only needs to be roughly right for local/dev use.
 var version string
+
+func init() {
+	if version == "" {
+		version = embeddedVersion
+	}
+}
 
 //go:embed name
 var name string
