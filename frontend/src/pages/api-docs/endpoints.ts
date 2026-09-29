@@ -405,6 +405,14 @@ export const sections: readonly Section[] = [
           '{\n  "success": true,\n  "obj": [\n    {\n      "id": 1,\n      "masterId": 10,\n      "childId": 11,\n      "name": "",\n      "alpn": "",\n      "path": "/vlws",\n      "dest": "",\n      "xver": 2,\n      "sortOrder": 0\n    }\n  ]\n}',
       },
       {
+        method: 'GET',
+        path: '/panel/api/inbounds/:id/routing',
+        summary:
+          "Outbound tag(s) this inbound's traffic is routed through via its panel-managed routing rule. Empty array means the inbound has no dedicated rule and follows the template's normal routing / default outbound.",
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' }],
+        response: '{\\n  "success": true,\\n  "obj": ["relay-1"]\\n}',
+      },
+      {
         method: 'POST',
         path: '/panel/api/inbounds/:id/fallbacks',
         summary:
