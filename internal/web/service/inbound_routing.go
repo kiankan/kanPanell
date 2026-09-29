@@ -126,7 +126,7 @@ func (s *XraySettingService) SyncInboundRouting(oldInboundTag, inboundTag string
 	// Pre-existing balancers (not ours) can be picked as a single target.
 	userBalancers := map[string]bool{}
 	ownBalTags := map[string]bool{
-		inboundRouteBalancerTag(inboundTag): true,
+		inboundRouteBalancerTag(inboundTag):    true,
 		inboundRouteBalancerTag(oldInboundTag): true,
 	}
 	if bl, ok := routing["balancers"].([]any); ok {

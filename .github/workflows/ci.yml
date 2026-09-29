@@ -39,7 +39,18 @@ jobs:
       - name: Test
         run: |
           go list ./... | grep -v '/frontend/node_modules/' > /tmp/go-packages.txt
-          go test -shuffle=on -count=1 $(cat /tmp/go-packages.txt)
+          set +e
+          go test -shuffle=on -count=1 $(cat /tmp/go-packages.txt) 2>&1 | tee /tmp/go-test.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            {
+              echo "## go test failures"
+              echo '```'
+              grep -E "^(--- FAIL|FAIL|#|.*\.go:[0-9]+:)" /tmp/go-test.log | tail -200
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$code"
 
   postgres-durable-first:
     runs-on: ubuntu-latest

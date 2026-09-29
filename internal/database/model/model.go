@@ -96,7 +96,6 @@ type Inbound struct {
 	// panel-managed routing rule (+ balancer for several tags) in the xray
 	// template; it is never stored on the inbound row itself.
 	RouteOutbounds *string `json:"routeOutbounds,omitempty" form:"routeOutbounds" gorm:"-"`
-
 }
 
 // FallbackParentInfo carries everything the frontend needs to rewrite a
