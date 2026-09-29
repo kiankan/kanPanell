@@ -42,5 +42,13 @@ jobs:
           else
             git add -A
             git commit -m "chore: regenerate openapi/schemas (auto)"
-            git push
+            set +e
+            out=$(git push origin HEAD:main 2>&1)
+            code=$?
+            echo "$out"
+            if [ "$code" -ne 0 ]; then
+              esc=$(echo "$out" | tr '\n' ' ' | sed 's/%/%25/g; s/\r/%0D/g')
+              echo "::error ::git push failed: ${esc}"
+              exit "$code"
+            fi
           fi
