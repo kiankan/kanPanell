@@ -43,12 +43,10 @@ jobs:
           go test -shuffle=on -count=1 $(cat /tmp/go-packages.txt) 2>&1 | tee /tmp/go-test.log
           code=${PIPESTATUS[0]}
           if [ "$code" -ne 0 ]; then
-            {
-              echo "## go test failures"
-              echo '```'
-              grep -E "^(--- FAIL|FAIL|#|.*\.go:[0-9]+:)" /tmp/go-test.log | tail -200
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
+            grep -E "^(--- FAIL:|FAIL|#|\s+\S+\.go:[0-9]+:)" /tmp/go-test.log | tail -100 | while IFS= read -r line; do
+              esc=$(echo "$line" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
+              echo "::error ::${esc}"
+            done
           fi
           exit "$code"
 
