@@ -76,6 +76,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.GET("/allLinks", a.getAllInboundLinks)
 	g.GET("/get/:id", a.getInbound)
 	g.GET("/:id/fallbacks", a.getFallbacks)
+	g.GET("/:id/routing", a.getInboundRouting)
 
 	g.POST("/add", a.addInbound)
 	g.POST("/del/:id", a.delInbound)
@@ -171,10 +172,19 @@ func (a *InboundController) addInbound(c *gin.Context) {
 		inbound.NodeID = nil
 	}
 
+	routeRaw := inbound.RouteOutbounds
 	inbound, needRestart, err := a.inboundServiceFor(c).AddInbound(inbound)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
+	}
+	if routeRaw != nil {
+		if err := a.applyRouteOutbounds("", inbound.Tag, routeRaw); err != nil {
+			jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+			a.broadcastInboundsUpdate(user.Id)
+			notifyClientsChanged()
+			return
+		}
 	}
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundCreateSuccess"), inbound, nil)
 	if needRestart {
@@ -191,10 +201,18 @@ func (a *InboundController) delInbound(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundDeleteSuccess"), err)
 		return
 	}
+	delTag := ""
+	if old, gerr := a.inboundService.GetInbound(id); gerr == nil && old != nil {
+		delTag = old.Tag
+	}
 	needRestart, err := a.inboundService.DelInbound(id)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
+	}
+	if delTag != "" {
+		// Drop the panel-managed routing rule/balancer of the deleted inbound.
+		_ = a.applyRouteOutbounds(delTag, delTag, ptrString("[]"))
 	}
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundDeleteSuccess"), id, nil)
 	if needRestart {
@@ -217,10 +235,22 @@ func (a *InboundController) bulkDelInbounds(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
+	bulkTags := make(map[int]string, len(req.Ids))
+	for _, bid := range req.Ids {
+		if old, gerr := a.inboundService.GetInbound(bid); gerr == nil && old != nil && old.Tag != "" {
+			bulkTags[bid] = old.Tag
+		}
+	}
 	result, needRestart, err := a.inboundService.DelInbounds(req.Ids)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
+	}
+	for bid, bt := range bulkTags {
+		// Only clean up tags whose inbound is really gone.
+		if _, gerr := a.inboundService.GetInbound(bid); gerr != nil {
+			_ = a.applyRouteOutbounds(bt, bt, ptrString("[]"))
+		}
 	}
 	jsonObj(c, result, nil)
 	if needRestart {
@@ -251,10 +281,24 @@ func (a *InboundController) updateInbound(c *gin.Context) {
 	if inbound.NodeID != nil && *inbound.NodeID == 0 {
 		inbound.NodeID = nil
 	}
+	routeRaw := inbound.RouteOutbounds
+	oldTag := ""
+	if prev, gerr := a.inboundService.GetInbound(id); gerr == nil && prev != nil {
+		oldTag = prev.Tag
+	}
 	inbound, needRestart, err := a.inboundServiceFor(c).UpdateInbound(inbound)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
+	}
+	if routeRaw != nil || (oldTag != "" && oldTag != inbound.Tag) {
+		if err := a.applyRouteOutbounds(oldTag, inbound.Tag, routeRaw); err != nil {
+			jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+			user := session.GetLoginUser(c)
+			a.broadcastInboundsUpdate(user.Id)
+			notifyClientsChanged()
+			return
+		}
 	}
 	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), inbound, nil)
 	if needRestart {
@@ -505,4 +549,61 @@ func (a *InboundController) setFallbacks(c *gin.Context) {
 	}
 	a.xrayService.SetToNeedRestart()
 	jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), nil)
+}
+
+func ptrString(v string) *string { return &v }
+
+// applyRouteOutbounds syncs the panel-managed routing rule for an inbound.
+// raw is the request's routeOutbounds JSON array: nil leaves the selection
+// alone (but still carries it over when the inbound's tag changed), an empty
+// string / "[]" clears it.
+func (a *InboundController) applyRouteOutbounds(oldTag, newTag string, raw *string) error {
+	svc := &service.XraySettingService{}
+	var tags []string
+	if raw == nil {
+		if oldTag == "" || oldTag == newTag {
+			return nil
+		}
+		cur, err := svc.GetInboundRouting(oldTag)
+		if err != nil {
+			return err
+		}
+		if len(cur) == 0 {
+			return nil
+		}
+		tags = cur
+	} else if s := strings.TrimSpace(*raw); s != "" {
+		if err := json.Unmarshal([]byte(s), &tags); err != nil {
+			return err
+		}
+	}
+	changed, err := svc.SyncInboundRouting(oldTag, newTag, tags)
+	if err != nil {
+		return err
+	}
+	if changed {
+		a.xrayService.SetToNeedRestart()
+	}
+	return nil
+}
+
+// getInboundRouting returns the outbound tags this inbound is routed through
+// via its panel-managed rule (empty = default routing).
+func (a *InboundController) getInboundRouting(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "get"), err)
+		return
+	}
+	inbound, err := a.inboundService.GetInbound(id)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.obtain"), err)
+		return
+	}
+	tags, err := (&service.XraySettingService{}).GetInboundRouting(inbound.Tag)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonObj(c, tags, nil)
 }

@@ -88,6 +88,15 @@ type Inbound struct {
 	// the master's externally reachable endpoint instead of the child's
 	// loopback listen. Not persisted.
 	FallbackParent *FallbackParentInfo `json:"fallbackParent,omitempty" gorm:"-"`
+
+	// RouteOutbounds is a write-only, non-persisted request field: a JSON
+	// array of outbound tags (e.g. `["direct","relay-1"]`) this inbound's
+	// traffic should be routed through. nil = leave the inbound's routing
+	// untouched; "" or "[]" = clear it. The controller turns it into a
+	// panel-managed routing rule (+ balancer for several tags) in the xray
+	// template; it is never stored on the inbound row itself.
+	RouteOutbounds *string `json:"routeOutbounds,omitempty" form:"routeOutbounds" gorm:"-"`
+
 }
 
 // FallbackParentInfo carries everything the frontend needs to rewrite a

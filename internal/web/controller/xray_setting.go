@@ -13,6 +13,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/integration"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/outbound"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 
 	"github.com/gin-gonic/gin"
@@ -351,6 +352,15 @@ func (a *XraySettingController) addOutboundRelay(c *gin.Context) {
 
 	a.XrayService.SetToNeedRestart()
 	jsonObj(c, result, nil)
+	// AddRelay creates a new inbound (and its client) alongside the
+	// outbound/balancer/rule, but that happens at the service layer, not
+	// through InboundController.addInbound — so, unlike a normal "Add
+	// Inbound", nothing tells the frontend to refetch. Without this, the
+	// new inbound is fully created and persisted, but stays invisible in
+	// the Inbounds list until an unrelated action happens to invalidate
+	// the same query (e.g. a manual page refresh).
+	websocket.BroadcastInvalidate(websocket.MessageTypeInbounds)
+	notifyClientsChanged()
 }
 
 // testOutbounds tests a batch of outbound configurations through one shared
