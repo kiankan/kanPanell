@@ -629,6 +629,7 @@ export interface Inbound {
   port: number;
   protocol: Protocol;
   remark: string;
+  routeOutbounds?: string | null;
   settings: unknown;
   shareAddr: string;
   shareAddrStrategy: string;

@@ -2741,6 +2741,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "VLESS-443",
         "type": "string"
       },
+      "routeOutbounds": {
+        "description": "RouteOutbounds is a write-only, non-persisted request field: a JSON\narray of outbound tags (e.g. `[\"direct\",\"relay-1\"]`) this inbound's\ntraffic should be routed through. nil = leave the inbound's routing\nuntouched; \"\" or \"[]\" = clear it. The controller turns it into a\npanel-managed routing rule (+ balancer for several tags) in the xray\ntemplate; it is never stored on the inbound row itself.",
+        "nullable": true,
+        "type": "string"
+      },
       "settings": {},
       "shareAddr": {
         "type": "string"

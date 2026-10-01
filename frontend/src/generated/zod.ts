@@ -668,6 +668,7 @@ export const InboundSchema = z.object({
   port: z.number().int().min(0).max(65535),
   protocol: z.enum(['vmess', 'vless', 'trojan', 'shadowsocks', 'wireguard', 'hysteria', 'http', 'mixed', 'tunnel', 'tun', 'mtproto', 'amneziawg', 'tuic']),
   remark: z.string(),
+  routeOutbounds: z.string().nullable().optional(),
   settings: z.unknown(),
   shareAddr: z.string(),
   shareAddrStrategy: z.enum(['node', 'listen', 'custom']),

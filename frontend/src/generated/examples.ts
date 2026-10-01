@@ -721,6 +721,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "port": 443,
     "protocol": "vless",
     "remark": "VLESS-443",
+    "routeOutbounds": null,
     "settings": null,
     "shareAddr": "",
     "shareAddrStrategy": "node",
