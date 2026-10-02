@@ -691,7 +691,12 @@
           "listen": "آدرس شنود ورودی",
           "custom": "سفارشی"
         },
-        "autoFill": "تکمیل خودکار"
+        "autoFill": "تکمیل خودکار",
+        "routeOutbounds": "مسیر عبور ترافیک از طریق",
+        "routeOutboundsHint": "ترافیک این Inbound را به‌جای مسیر پیش‌فرض، از یک Outbound مشخص عبور بده. برای تقسیم بار می‌توانید چند مورد را انتخاب کنید.",
+        "routeOutboundsPlaceholder": "مسیر پیش‌فرض (بدون قانون اختصاصی)",
+        "routeOutboundsGroupOutbounds": "Outbound ها",
+        "routeOutboundsGroupBalancers": "Balancer ها"
       },
       "info": {
         "mode": "حالت",

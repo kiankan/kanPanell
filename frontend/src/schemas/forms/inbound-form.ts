@@ -102,6 +102,11 @@ export const InboundFormBaseSchema = z.object({
     domainsExcluded: [],
   }),
   streamSettings: InboundStreamFormSchema.optional(),
+  // Outbound tag(s) this inbound's traffic is routed through. Not part of
+  // the raw inbound row — fetched separately (GET .../:id/routing) and
+  // merged in on edit; on submit it's turned into a panel-managed routing
+  // rule (a balancer when more than one is picked). Empty = normal routing.
+  routeOutbounds: z.array(z.string()).default([]),
 });
 export type InboundFormBase = z.infer<typeof InboundFormBaseSchema>;
 

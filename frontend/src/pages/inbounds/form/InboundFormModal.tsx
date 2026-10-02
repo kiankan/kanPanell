@@ -20,6 +20,7 @@ import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
 import { HttpUtil, NumberFormatter, RandomUtil, SizeFormatter, Wireguard } from '@/utils';
 import type { RealityScanResult } from '@/generated/types';
 import { rawInboundToFormValues, formValuesToWirePayload } from '@/lib/xray/inbound-form-adapter';
+import RouteOutboundsField from '@/pages/inbounds/form/RouteOutboundsField';
 import { createDefaultInboundSettings } from '@/lib/xray/inbound-defaults';
 import { generateAwgObfuscation } from '@/lib/xray/amneziawg-obfuscation';
 import { composeInboundTag, isAutoInboundTag, type InboundTagInput } from '@/lib/xray/inbound-tag';
@@ -461,6 +462,17 @@ export default function InboundFormModal({
     } else {
       loadFallbacks(null);
     }
+    if (mode === 'edit' && dbInbound) {
+      HttpUtil.get(`/panel/api/inbounds/${dbInbound.id}/routing`)
+        .then((msg) => {
+          if (msg?.success && Array.isArray(msg.obj)) {
+            setV('routeOutbounds', msg.obj as string[]);
+          }
+        })
+        .catch(() => {
+          /* best-effort prefill; an empty selection is a safe fallback */
+        });
+    }
 
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [open, mode, dbInbound, methods]);
@@ -654,6 +666,8 @@ export default function InboundFormModal({
 
       {protocol !== Protocols.MTPROTO && (
         <>
+          <RouteOutboundsField />
+
           <FormField
             name="shareAddrStrategy"
             label={labelWithHint(

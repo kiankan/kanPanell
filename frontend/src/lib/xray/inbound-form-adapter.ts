@@ -84,6 +84,10 @@ export interface WireInboundPayload {
   shareAddr: string;
   subSortIndex: number;
   disableFlow: boolean;
+  // JSON array of outbound tags, e.g. '["relay-1"]' or '[]' to clear.
+  // Always sent (never omitted) so an explicit "no selection" actually
+  // clears any previously-set routing rule instead of leaving it alone.
+  routeOutbounds: string;
 }
 
 function coerceJsonObject(value: unknown): Record<string, unknown> {
@@ -219,6 +223,9 @@ export function rawInboundToFormValues(row: RawInboundRow): InboundFormValues {
     shareAddrStrategy: coerceShareAddrStrategy(row.shareAddrStrategy),
     shareAddr: row.shareAddr ?? '',
     subSortIndex: row.subSortIndex == null || row.subSortIndex === 0 ? 1 : row.subSortIndex,
+    // Not derived from the row — InboundFormModal fetches the live
+    // selection via GET .../:id/routing and setValue()s it separately.
+    routeOutbounds: [],
     disableFlow: row.disableFlow ?? false,
     protocol,
     settings,
@@ -388,6 +395,7 @@ export function formValuesToWirePayload(values: InboundFormValues): WireInboundP
     shareAddr: values.shareAddr,
     subSortIndex: values.subSortIndex,
     disableFlow: values.disableFlow,
+    routeOutbounds: JSON.stringify(values.routeOutbounds ?? []),
   };
   if (values.nodeId != null) payload.nodeId = values.nodeId;
   return payload;
