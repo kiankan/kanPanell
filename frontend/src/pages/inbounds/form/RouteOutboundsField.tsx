@@ -21,8 +21,14 @@ export default function RouteOutboundsField() {
   const options =
     balancerOptions.length > 0
       ? [
-          { label: t('pages.inbounds.form.routeOutboundsGroupOutbounds'), options: outboundOptions },
-          { label: t('pages.inbounds.form.routeOutboundsGroupBalancers'), options: balancerOptions },
+          {
+            label: t('pages.inbounds.form.routeOutboundsGroupOutbounds'),
+            options: outboundOptions,
+          },
+          {
+            label: t('pages.inbounds.form.routeOutboundsGroupBalancers'),
+            options: balancerOptions,
+          },
         ]
       : outboundOptions;
 
