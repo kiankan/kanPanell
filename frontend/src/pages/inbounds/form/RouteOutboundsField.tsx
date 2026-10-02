@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Select } from 'antd';
+import { Select, type SelectProps } from 'antd';
 
 import { FormField } from '@/components/form/rhf';
 import { useOutboundTagGroups } from '@/api/queries/useOutboundTags';
@@ -18,7 +18,7 @@ export default function RouteOutboundsField() {
     .filter((tag) => !tag.startsWith(MANAGED_BALANCER_PREFIX))
     .map((tag) => ({ value: tag, label: tag }));
 
-  const options =
+  const options: SelectProps['options'] =
     balancerOptions.length > 0
       ? [
           {
