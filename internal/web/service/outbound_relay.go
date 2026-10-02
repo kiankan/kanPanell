@@ -25,6 +25,11 @@ import (
 type AddOutboundRelayRequest struct {
 	Config string `json:"config"`
 	Remark string `json:"remark"`
+	// UserId is the owning admin's id, set by the controller from the
+	// session (never trusted from the request body). AddRelay's inbound
+	// is otherwise created with UserId 0, which matches no real admin —
+	// it's then invisible in GetInbounds' `WHERE user_id = ?` listing.
+	UserId int `json:"-"`
 }
 
 // AddOutboundRelayResult reports everything AddRelay created: the outbound
@@ -182,6 +187,7 @@ func (s *XraySettingService) AddRelay(req AddOutboundRelayRequest) (*AddOutbound
 	}
 
 	inbound := &model.Inbound{
+		UserId:         req.UserId,
 		Remark:         remark,
 		Enable:         true,
 		Port:           port,
