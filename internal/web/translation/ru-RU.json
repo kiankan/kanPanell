@@ -692,7 +692,12 @@
           "node": "Адрес узла",
           "listen": "Адрес прослушивания inbound",
           "custom": "Пользовательская"
-        }
+        },
+        "routeOutbounds": "Route traffic through",
+        "routeOutboundsHint": "Send this inbound's traffic through a specific outbound instead of the template's default routing. Pick more than one to load-balance across them.",
+        "routeOutboundsPlaceholder": "Default routing (no dedicated rule)",
+        "routeOutboundsGroupOutbounds": "Outbounds",
+        "routeOutboundsGroupBalancers": "Balancers"
       },
       "info": {
         "mode": "Режим",

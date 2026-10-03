@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Select, type SelectProps } from 'antd';
 
@@ -11,7 +12,13 @@ const MANAGED_BALANCER_PREFIX = 'inbound-route-bal:';
 
 export default function RouteOutboundsField() {
   const { t } = useTranslation();
-  const { data } = useOutboundTagGroups();
+  // This field renders on essentially every inbound add/edit (all protocols
+  // but MTProto), so fetching eagerly on mount would turn every form open
+  // into an extra request. Load lazily on first interaction instead; once
+  // fetched, react-query's cache (shared with the Xray settings page) keeps
+  // it around.
+  const [everOpened, setEverOpened] = useState(false);
+  const { data } = useOutboundTagGroups({ enabled: everOpened });
 
   const outboundOptions = (data?.outbounds ?? []).map((tag) => ({ value: tag, label: tag }));
   const balancerOptions = (data?.balancers ?? [])
@@ -45,6 +52,9 @@ export default function RouteOutboundsField() {
         optionFilterProp="label"
         placeholder={t('pages.inbounds.form.routeOutboundsPlaceholder')}
         options={options}
+        onOpenChange={(open) => {
+          if (open) setEverOpened(true);
+        }}
       />
     </FormField>
   );

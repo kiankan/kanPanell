@@ -691,7 +691,12 @@
         "bytesPerSecTip": "Eşik aşıldıktan sonra fallback trafiğine uygulanan hız sınırı (bayt/sn); böylece sondalar sunucunuzu hedefe ücretsiz bant genişliği olarak kullanamaz. 0 = sınır yok (bu yönü devre dışı bırakır).",
         "burstBytesPerSec": "Saniye Başına Patlama Baytı",
         "burstBytesPerSecTip": "Sabit hızın üzerindeki kısa patlamalar için pay (token-bucket boyutu). Saniye Başına Bayt değerinden düşükse ona eşitlenecek şekilde yükseltilir.",
-        "autoFill": "Otomatik Doldur"
+        "autoFill": "Otomatik Doldur",
+        "routeOutbounds": "Route traffic through",
+        "routeOutboundsHint": "Send this inbound's traffic through a specific outbound instead of the template's default routing. Pick more than one to load-balance across them.",
+        "routeOutboundsPlaceholder": "Default routing (no dedicated rule)",
+        "routeOutboundsGroupOutbounds": "Outbounds",
+        "routeOutboundsGroupBalancers": "Balancers"
       },
       "info": {
         "mode": "Mod",

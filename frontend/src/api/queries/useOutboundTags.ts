@@ -8,12 +8,13 @@ import { isOutboundProtocol } from '@/schemas/primitives';
 // inbound's Telegram traffic to. Shares the cached xray config query so opening
 // the inbound form costs no extra request when the Xray page was already
 // visited; `select` derives just the tag list without disturbing other readers.
-export function useOutboundTags(opts?: { excludeBlackhole?: boolean }) {
+export function useOutboundTags(opts?: { excludeBlackhole?: boolean; enabled?: boolean }) {
   const excludeBlackhole = opts?.excludeBlackhole ?? false;
   return useQuery({
     queryKey: keys.xray.config(),
     queryFn: fetchXrayConfig,
     staleTime: Infinity,
+    enabled: opts?.enabled ?? true,
     select: (data): string[] => {
       const tags = new Set<string>();
       for (const o of data?.xraySetting?.outbounds ?? []) {
@@ -46,12 +47,13 @@ export interface OutboundTagGroups {
 // Same data as useOutboundTags, but keeps outbound and balancer tags apart so a
 // picker can render them in labeled groups (like the panel-outbound selector)
 // instead of one flat list.
-export function useOutboundTagGroups(opts?: { excludeBlackhole?: boolean }) {
+export function useOutboundTagGroups(opts?: { excludeBlackhole?: boolean; enabled?: boolean }) {
   const excludeBlackhole = opts?.excludeBlackhole ?? false;
   return useQuery({
     queryKey: keys.xray.config(),
     queryFn: fetchXrayConfig,
     staleTime: Infinity,
+    enabled: opts?.enabled ?? true,
     select: (data): OutboundTagGroups => {
       const outbounds = new Set<string>();
       for (const o of data?.xraySetting?.outbounds ?? []) {
