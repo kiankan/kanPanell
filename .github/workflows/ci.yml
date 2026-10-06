@@ -216,7 +216,6 @@ jobs:
           set +e
           npm test > /tmp/frontend-test.log 2>&1
           code=$?
-          echo "::error ::DEBUG log has $(wc -l < /tmp/frontend-test.log) lines, exit code ${code}"
           if [ "$code" -ne 0 ]; then
             content=$(tail -c 50000 /tmp/frontend-test.log | sed 's/\x1b\[[0-9;]*m//g')
             esc=$(printf '%s' "$content" | sed 's/%/%25/g; s/\r/%0D/g' | awk '{printf "%s%%0A", $0}')
