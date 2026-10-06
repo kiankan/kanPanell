@@ -473,7 +473,7 @@
       },
       "routeTesterTest": "آزمایش مسیر",
       "statsOutboundDownlink": "آمار دانلود خروجی",
-      "defaultOutboundDesc": "ترافیکی که با هیچ قانون مسیریابی جور نشود از این خروجی استفاده می‌کند (اولین خروجی در فهرست).",
+      "defaultOutboundDesc": "ترافیکی که با هیچ routing rule ای مطابقت نداشته باشد از این outbound رد می‌شود. برای تقسیم آن ترافیک بین چند outbound، می‌توانید بیشتر از یکی انتخاب کنید.",
       "balancerNotRunning": "این بالانسر در Xray در حال اجرا فعال نیست — ابتدا تغییرات را ذخیره کنید یا Xray را روشن کنید",
       "basicRouting": "مسیریابی پایه",
       "logConfigs": "لاگ",

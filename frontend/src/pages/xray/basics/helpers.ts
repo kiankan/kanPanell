@@ -147,6 +147,61 @@ export function setDefaultOutboundTag(t: XraySettingsValue, tag: string): void {
   }
 }
 
+// Xray-core itself only ever has ONE structural default (outbounds[0] is
+// what unmatched traffic falls back to) — there's no such thing as "several
+// defaults" at that level. To let the user split default-routed traffic
+// across more than one outbound anyway, picking several here instead builds
+// a dedicated balancer plus a catch-all rule (no inboundTag/conditions at
+// all) placed LAST in routing.rules, so every other, more specific rule
+// still wins — it only ever catches what nothing else matched, same as the
+// single-outbound default does today. outbounds[0] is still kept pointed at
+// one of the chosen tags too, as a structural safety net.
+const DEFAULT_OUTBOUND_BALANCER_TAG = 'default-outbound-balancer';
+const DEFAULT_OUTBOUND_RULE_TAG = 'default-outbound-rule';
+
+function stripManagedDefaultOutboundEntries(t: XraySettingsValue): void {
+  if (Array.isArray(t.routing?.rules)) {
+    t.routing.rules = t.routing.rules.filter((r) => r?.ruleTag !== DEFAULT_OUTBOUND_RULE_TAG);
+  }
+  if (Array.isArray(t.routing?.balancers)) {
+    t.routing.balancers = t.routing.balancers.filter(
+      (b) => b?.tag !== DEFAULT_OUTBOUND_BALANCER_TAG,
+    );
+  }
+}
+
+export function getDefaultOutbounds(t: XraySettingsValue | null): string[] {
+  if (!t) return ['direct'];
+  const balancer = t.routing?.balancers?.find((b) => b?.tag === DEFAULT_OUTBOUND_BALANCER_TAG);
+  if (balancer && Array.isArray(balancer.selector) && balancer.selector.length > 0) {
+    return balancer.selector;
+  }
+  return [getDefaultOutboundTag(t)];
+}
+
+export function setDefaultOutbounds(t: XraySettingsValue, tags: string[]): void {
+  const clean = Array.from(new Set(tags.filter((tag) => tag && tag.length > 0)));
+  stripManagedDefaultOutboundEntries(t);
+
+  if (clean.length <= 1) {
+    setDefaultOutboundTag(t, clean[0] ?? 'direct');
+    return;
+  }
+
+  setDefaultOutboundTag(t, clean[0]);
+
+  if (!t.routing) t.routing = {};
+  if (!Array.isArray(t.routing.balancers)) t.routing.balancers = [];
+  t.routing.balancers.push({ tag: DEFAULT_OUTBOUND_BALANCER_TAG, selector: clean } as never);
+
+  if (!Array.isArray(t.routing.rules)) t.routing.rules = [];
+  t.routing.rules.push({
+    type: 'field',
+    ruleTag: DEFAULT_OUTBOUND_RULE_TAG,
+    balancerTag: DEFAULT_OUTBOUND_BALANCER_TAG,
+  } as never);
+}
+
 export function propagateOutboundTagRename(
   t: XraySettingsValue,
   oldTag: string,

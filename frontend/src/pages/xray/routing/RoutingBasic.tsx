@@ -14,10 +14,10 @@ import {
   ipv4Settings,
 } from '../basics/constants';
 import {
-  getDefaultOutboundTag,
+  getDefaultOutbounds,
   ruleGetter,
   ruleSetter,
-  setDefaultOutboundTag,
+  setDefaultOutbounds,
   syncOutbound,
 } from '../basics/helpers';
 
@@ -49,7 +49,7 @@ export default function RoutingBasic({ templateSettings, setTemplateSettings }: 
   const ipv4Domains = ruleGetter(templateSettings, 'IPv4', 'domain');
 
   const torrentActive = BITTORRENT_PROTOCOLS.every((p) => blockedProtocols.includes(p));
-  const defaultOutboundTag = getDefaultOutboundTag(templateSettings);
+  const defaultOutboundTags = getDefaultOutbounds(templateSettings);
   const defaultOutboundOptions = useMemo(() => {
     const tags = new Set<string>(['direct', 'blocked']);
     for (const o of templateSettings?.outbounds ?? []) {
@@ -73,10 +73,12 @@ export default function RoutingBasic({ templateSettings, setTemplateSettings }: 
         paddings="small"
         control={
           <Select
-            value={defaultOutboundTag}
+            mode="multiple"
+            allowClear
+            value={defaultOutboundTags}
             style={{ width: '100%' }}
             options={defaultOutboundOptions}
-            onChange={(tag) => mutate((tt) => setDefaultOutboundTag(tt, tag))}
+            onChange={(tags) => mutate((tt) => setDefaultOutbounds(tt, tags))}
           />
         }
       />

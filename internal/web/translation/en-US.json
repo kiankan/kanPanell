@@ -473,7 +473,7 @@
       },
       "routeTesterTest": "Test Route",
       "statsOutboundDownlink": "Outbound Download Statistics",
-      "defaultOutboundDesc": "Traffic that does not match any routing rule uses this outbound (Xray uses the first outbound in the list).",
+      "defaultOutboundDesc": "Traffic that does not match any routing rule uses this outbound. Pick more than one to split that unmatched traffic across them via a balancer.",
       "balancerNotRunning": "This balancer is not active in the running Xray — save your changes or start Xray first",
       "basicRouting": "Basic Routing",
       "logConfigs": "Log",
