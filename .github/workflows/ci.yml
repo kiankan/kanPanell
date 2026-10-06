@@ -211,12 +211,14 @@ jobs:
         working-directory: frontend
       - name: Test
         working-directory: frontend
+        timeout-minutes: 8
         run: |
           set +e
-          npm test 2>&1 | tee /tmp/frontend-test.log
+          npm test -- --no-color 2>&1 | tee /tmp/frontend-test.log
           code=${PIPESTATUS[0]}
           if [ "$code" -ne 0 ]; then
-            grep -E "FAIL|✗|×|Error|error:|at .*\.tsx?:[0-9]+" /tmp/frontend-test.log | tail -150 | while IFS= read -r line; do
+            tail -c 60000 /tmp/frontend-test.log | sed 's/\x1b\[[0-9;]*m//g' | tail -130 | while IFS= read -r line; do
+              [ -z "$line" ] && continue
               esc=$(echo "$line" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
               echo "::error ::${esc}"
             done
