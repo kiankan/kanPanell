@@ -214,14 +214,13 @@ jobs:
         timeout-minutes: 8
         run: |
           set +e
-          npm test -- --no-color 2>&1 | tee /tmp/frontend-test.log
-          code=${PIPESTATUS[0]}
+          npm test > /tmp/frontend-test.log 2>&1
+          code=$?
+          echo "::error ::DEBUG log has $(wc -l < /tmp/frontend-test.log) lines, exit code ${code}"
           if [ "$code" -ne 0 ]; then
-            tail -c 60000 /tmp/frontend-test.log | sed 's/\x1b\[[0-9;]*m//g' | tail -130 | while IFS= read -r line; do
-              [ -z "$line" ] && continue
-              esc=$(echo "$line" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
-              echo "::error ::${esc}"
-            done
+            content=$(tail -c 50000 /tmp/frontend-test.log | sed 's/\x1b\[[0-9;]*m//g')
+            esc=$(printf '%s' "$content" | sed 's/%/%25/g; s/\r/%0D/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error ::${esc}"
           fi
           exit "$code"
       - name: Build
