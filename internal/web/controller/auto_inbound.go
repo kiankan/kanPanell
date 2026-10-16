@@ -74,7 +74,7 @@ func (a *XraySettingController) reconcileAutoInbounds(c *gin.Context) {
 		// Some reconciliation failures happen after DB mutations. Ensure Xray
 		// applies deletions/route cleanup before returning the error to the UI.
 		if restartErr := a.applyAutoInboundRestart(needRestart); restartErr != nil {
-			err = fmt.Errorf("%w; failed to apply safety changes: %v", err, restartErr)
+			err = fmt.Errorf("%w; failed to apply safety changes: %w", err, restartErr)
 		}
 		jsonMsg(c, "Auto Inbound reconciliation failed", err)
 		return
@@ -298,7 +298,7 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 					result.Removed++
 				}
 				if len(cleanupErrors) > 0 {
-					return result, true, fmt.Errorf("route repair failed for outbound %q (%v); cleanup was incomplete: %s", outboundTag, routeErr, strings.Join(cleanupErrors, "; "))
+					return result, true, fmt.Errorf("route repair failed for outbound %q (%w); cleanup was incomplete: %s", outboundTag, routeErr, strings.Join(cleanupErrors, "; "))
 				}
 				return result, true, fmt.Errorf("removed all managed inbounds for outbound %q because its exclusive route could not be repaired: %w", outboundTag, routeErr)
 			}
