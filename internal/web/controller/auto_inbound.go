@@ -71,6 +71,11 @@ func (a *XraySettingController) reconcileAutoInbounds(c *gin.Context) {
 	user := session.GetLoginUser(c)
 	result, needRestart, err := a.syncAutoInbounds(user.Id, cfg)
 	if err != nil {
+		// Some reconciliation failures happen after DB mutations. Ensure Xray
+		// applies deletions/route cleanup before returning the error to the UI.
+		if restartErr := a.applyAutoInboundRestart(needRestart); restartErr != nil {
+			err = fmt.Errorf("%w; failed to apply safety changes: %v", err, restartErr)
+		}
 		jsonMsg(c, "Auto Inbound reconciliation failed", err)
 		return
 	}
