@@ -214,12 +214,19 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 	for _, tag := range outboundTags {
 		seen[tag] = true
 	}
-	for _, tag := range subscriptionTags {
-		tag = strings.TrimSpace(tag)
-		if tag != "" && !seen[tag] {
-			outboundTags = append(outboundTags, tag)
-			seen[tag] = true
+	for _, rawTag := range subscriptionTags {
+		tag := strings.TrimSpace(rawTag)
+		if tag == "" {
+			continue
 		}
+		if tag != rawTag {
+			return nil, false, fmt.Errorf("subscription outbound tag %q contains leading or trailing whitespace", rawTag)
+		}
+		if seen[tag] {
+			return nil, false, fmt.Errorf("duplicate outbound tag %q across Xray template and active subscriptions", tag)
+		}
+		outboundTags = append(outboundTags, tag)
+		seen[tag] = true
 	}
 	inbounds, err := a.InboundService.GetInbounds(userID)
 	if err != nil {
