@@ -13,6 +13,12 @@ interface AutoInboundTLSConfig {
   keyFile?: string;
 }
 
+interface AutoInboundTLSResult {
+  created?: number;
+  removed?: number;
+  skipped?: string[];
+}
+
 export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundSettingsModalProps) {
   const [form] = Form.useForm<AutoInboundTLSConfig>();
   const [loading, setLoading] = useState(false);
@@ -21,7 +27,7 @@ export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundS
 
   useEffect(() => {
     if (!open) return;
-    HttpUtil.get('/panel/api/xray/auto-inbounds/config')
+    HttpUtil.get<AutoInboundTLSConfig>('/panel/api/xray/auto-inbounds/config')
       .then((r) => {
         if (r?.success && r.obj) form.setFieldsValue(r.obj);
       })
@@ -35,7 +41,7 @@ export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundS
     setSaving(true);
     setResult('');
     try {
-      const r = await HttpUtil.post('/panel/api/xray/auto-inbounds/reconcile', values);
+      const r = await HttpUtil.post<AutoInboundTLSResult>('/panel/api/xray/auto-inbounds/reconcile', values);
       if (!r?.success) {
         message.error(r?.msg || 'Auto Inbound setup failed. No new inbound was created.');
         return;
