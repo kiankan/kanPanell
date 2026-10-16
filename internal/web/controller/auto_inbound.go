@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -18,6 +19,10 @@ import (
 )
 
 const autoInboundRemarkPrefix = "[Auto Inbound] "
+
+// Serialize reconciliation in-process so simultaneous requests cannot both
+// observe a missing inbound and create two listeners for the same outbound.
+var autoInboundReconcileMu sync.Mutex
 
 type autoInboundTLSRequest struct {
 	Domain          string `json:"domain" binding:"required"`
@@ -166,6 +171,9 @@ func outboundTagsFromTemplate(raw string) ([]string, error) {
 }
 
 func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInboundTLSConfig) (*autoInboundResult, bool, error) {
+	autoInboundReconcileMu.Lock()
+	defer autoInboundReconcileMu.Unlock()
+
 	// This guard is intentionally repeated at the point of creation: callers
 	// cannot bypass TLS validation by reaching reconciliation through another path.
 	if err := cfg.Validate(); err != nil {
