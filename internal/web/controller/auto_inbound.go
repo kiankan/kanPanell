@@ -88,6 +88,28 @@ func uniqueAutoInboundTag(outboundTag string, used map[string]bool) string {
 	return tag
 }
 
+func outboundTagForInbound(rawConfig, inboundTag string) string {
+	var config struct {
+		Routing struct {
+			Rules []struct {
+				InboundTag  []string `json:"inboundTag"`
+				OutboundTag string   `json:"outboundTag"`
+			} `json:"rules"`
+		} `json:"routing"`
+	}
+	if json.Unmarshal([]byte(rawConfig), &config) != nil {
+		return ""
+	}
+	for _, rule := range config.Routing.Rules {
+		for _, tag := range rule.InboundTag {
+			if tag == inboundTag && rule.OutboundTag != "" {
+				return rule.OutboundTag
+			}
+		}
+	}
+	return ""
+}
+
 func allocateAutoInboundPort(used map[int]bool) (int, error) {
 	// Keep ports selected during this reconciliation reserved in-memory too:
 	// Xray is restarted only after the batch, so the OS could otherwise hand
@@ -177,8 +199,19 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		if inbound != nil && inbound.Port > 0 {
 			usedPorts[inbound.Port] = true
 		}
-		if inbound != nil && strings.HasPrefix(inbound.Remark, autoInboundRemarkPrefix) {
-			managed[strings.TrimPrefix(inbound.Remark, autoInboundRemarkPrefix)] = inbound
+		if inbound != nil && (strings.HasPrefix(inbound.Remark, autoInboundRemarkPrefix) || strings.HasPrefix(inbound.Tag, "auto-in-")) {
+			outboundTag := ""
+			if strings.HasPrefix(inbound.Remark, autoInboundRemarkPrefix) {
+				outboundTag = strings.TrimPrefix(inbound.Remark, autoInboundRemarkPrefix)
+			} else {
+				// If an operator renamed the remark, recover the association from
+				// the dedicated inboundTag -> outboundTag routing rule.
+				outboundTag = outboundTagForInbound(raw, inbound.Tag)
+			}
+			if outboundTag == "" {
+				outboundTag = "\x00orphan:" + inbound.Tag
+			}
+			managed[outboundTag] = inbound
 		}
 	}
 	wanted := map[string]bool{}
