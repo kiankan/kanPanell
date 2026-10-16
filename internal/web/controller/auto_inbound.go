@@ -275,17 +275,26 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 			existing := existingList[0]
 			routeChanged, routeErr := a.XraySettingService.SyncInboundRouting(existing.Tag, existing.Tag, []string{outboundTag})
 			if routeErr != nil {
-				// Never leave a managed listener active when its exclusive route
-				// cannot be verified or repaired.
-				_, deleteErr := a.InboundService.DelInbound(existing.Id)
-				if deleteErr != nil {
-					return result, true, fmt.Errorf("route repair failed for inbound %q and the inbound could not be removed: %w; %w", existing.Tag, routeErr, deleteErr)
+				// Never leave any listener for this outbound active when its
+				// exclusive route cannot be verified or repaired. Remove the
+				// canonical inbound and all duplicates before returning.
+				var cleanupErrors []string
+				for _, unsafeInbound := range existingList {
+					_, deleteErr := a.InboundService.DelInbound(unsafeInbound.Id)
+					if deleteErr != nil {
+						cleanupErrors = append(cleanupErrors, fmt.Sprintf("remove %q: %v", unsafeInbound.Tag, deleteErr))
+						continue
+					}
+					_, routeCleanupErr := a.XraySettingService.SyncInboundRouting(unsafeInbound.Tag, "", []string{})
+					if routeCleanupErr != nil {
+						cleanupErrors = append(cleanupErrors, fmt.Sprintf("clean route for %q: %v", unsafeInbound.Tag, routeCleanupErr))
+					}
+					result.Removed++
 				}
-				_, cleanupErr := a.XraySettingService.SyncInboundRouting(existing.Tag, "", []string{})
-				if cleanupErr != nil {
-					return result, true, fmt.Errorf("removed inbound %q after route repair failed (%w), but its managed route could not be cleaned up: %w", existing.Tag, routeErr, cleanupErr)
+				if len(cleanupErrors) > 0 {
+					return result, true, fmt.Errorf("route repair failed for outbound %q (%v); cleanup was incomplete: %s", outboundTag, routeErr, strings.Join(cleanupErrors, "; "))
 				}
-				return result, true, fmt.Errorf("removed inbound %q because its exclusive outbound route could not be repaired: %w", existing.Tag, routeErr)
+				return result, true, fmt.Errorf("removed all managed inbounds for outbound %q because its exclusive route could not be repaired: %w", outboundTag, routeErr)
 			}
 			needRestart = needRestart || routeChanged
 			if routeChanged {
