@@ -424,6 +424,9 @@ func (s *SettingService) GetAutoInboundTLSConfig() (AutoInboundTLSConfig, error)
 
 // SaveAutoInboundTLSConfig validates all TLS inputs before persisting them.
 func (s *SettingService) SaveAutoInboundTLSConfig(cfg AutoInboundTLSConfig) error {
+	cfg.Domain = strings.ToLower(strings.TrimSuffix(strings.TrimSpace(cfg.Domain), "."))
+	cfg.CertificateFile = strings.TrimSpace(cfg.CertificateFile)
+	cfg.KeyFile = strings.TrimSpace(cfg.KeyFile)
 	if err := cfg.Validate(); err != nil {
 		return err
 	}
