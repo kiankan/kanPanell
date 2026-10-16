@@ -173,10 +173,11 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 	for _, outboundTag := range outboundTags {
 		wanted[outboundTag] = true
 		if existing := managed[outboundTag]; existing != nil {
-			_, err := a.XraySettingService.SyncInboundRouting(existing.Tag, existing.Tag, []string{outboundTag})
+			routeChanged, err := a.XraySettingService.SyncInboundRouting(existing.Tag, existing.Tag, []string{outboundTag})
 			if err != nil {
 				return result, needRestart, err
 			}
+			needRestart = needRestart || routeChanged
 			delete(managed, outboundTag)
 			continue
 		}
@@ -218,10 +219,12 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 			continue
 		}
 		needRestart = needRestart || restart
-		if _, err := a.XraySettingService.SyncInboundRouting("", created.Tag, []string{outboundTag}); err != nil {
+		routeChanged, err := a.XraySettingService.SyncInboundRouting("", created.Tag, []string{outboundTag})
+		if err != nil {
 			_, _ = a.InboundService.DelInbound(created.Id)
 			return result, needRestart, fmt.Errorf("failed to route inbound %q only to outbound %q: %w", created.Tag, outboundTag, err)
 		}
+		needRestart = needRestart || routeChanged
 		result.Created++
 	}
 	for outboundTag, inbound := range managed {
@@ -235,9 +238,11 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 			return result, needRestart, err
 		}
 		needRestart = needRestart || restart
-		if _, err := a.XraySettingService.SyncInboundRouting(inbound.Tag, "", []string{}); err != nil {
+		routeChanged, err := a.XraySettingService.SyncInboundRouting(inbound.Tag, "", []string{})
+		if err != nil {
 			return result, needRestart, err
 		}
+		needRestart = needRestart || routeChanged
 		result.Removed++
 	}
 	return result, needRestart, nil
