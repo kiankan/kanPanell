@@ -18,6 +18,16 @@ func TestOutboundTagsFromTemplateDeduplicatesAndSkipsEmptyTags(t *testing.T) {
 	}
 }
 
+func TestOutboundTagForInboundFindsExclusiveRoute(t *testing.T) {
+	raw := `{"routing":{"rules":[{"type":"field","inboundTag":["auto-in-123"],"outboundTag":"proxy-a"}]}}`
+	if got := outboundTagForInbound(raw, "auto-in-123"); got != "proxy-a" {
+		t.Fatalf("outboundTagForInbound() = %q, want %q", got, "proxy-a")
+	}
+	if got := outboundTagForInbound(raw, "other-inbound"); got != "" {
+		t.Fatalf("outboundTagForInbound() for unknown tag = %q, want empty", got)
+	}
+}
+
 func TestOutboundTagsFromTemplateRejectsInvalidJSON(t *testing.T) {
 	if _, err := outboundTagsFromTemplate(`{"outbounds":`); err == nil {
 		t.Fatal("outboundTagsFromTemplate() expected an error for invalid JSON")
