@@ -26,11 +26,9 @@ export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundS
 
   useEffect(() => {
     if (!open) return;
-    HttpUtil.get<AutoInboundTLSConfig>(
-      '/panel/api/xray/auto-inbounds/config',
-      undefined,
-      { silent: true },
-    )
+    HttpUtil.get<AutoInboundTLSConfig>('/panel/api/xray/auto-inbounds/config', undefined, {
+      silent: true,
+    })
       .then((r) => {
         if (r.success && r.obj) form.setFieldsValue(r.obj);
         else message.error(r.msg || 'Could not load Auto Inbound TLS settings.');
@@ -127,14 +125,7 @@ export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundS
           />
         </Form.Item>
       </Form>
-      {result && (
-        <Alert
-          type="success"
-          showIcon
-          style={{ marginTop: 12 }}
-          message={result}
-        />
-      )}
+      {result && <Alert type="success" showIcon style={{ marginTop: 12 }} message={result} />}
     </Modal>
   );
 }
