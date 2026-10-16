@@ -180,7 +180,13 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		if existing := managed[outboundTag]; existing != nil {
 			routeChanged, routeErr := a.XraySettingService.SyncInboundRouting(existing.Tag, existing.Tag, []string{outboundTag})
 			if routeErr != nil {
-				return result, needRestart, routeErr
+				// Never leave a managed listener active when its exclusive route
+				// cannot be verified or repaired.
+				_, deleteErr := a.InboundService.DelInbound(existing.Id)
+				if deleteErr != nil {
+					return result, true, fmt.Errorf("route repair failed for inbound %q and the inbound could not be removed: %v; %w", existing.Tag, routeErr, deleteErr)
+				}
+				return result, true, fmt.Errorf("removed inbound %q because its exclusive outbound route could not be repaired: %w", existing.Tag, routeErr)
 			}
 			needRestart = needRestart || routeChanged
 			delete(managed, outboundTag)
