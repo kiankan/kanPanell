@@ -331,7 +331,7 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 	}
 
 	for outboundTag, inbound := range pending {
-		created, restart, addErr := a.InboundService.AddInbound(inbound)
+		_, restart, addErr := a.InboundService.AddInbound(inbound)
 		if addErr != nil {
 			result.Skipped = append(result.Skipped, outboundTag+": "+addErr.Error())
 			routeChanged, cleanupErr := a.XraySettingService.SyncInboundRouting(inbound.Tag, "", []string{})
