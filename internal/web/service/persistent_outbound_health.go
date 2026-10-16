@@ -125,26 +125,6 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 	if err != nil || !cfg.Enabled {
 		return
 	}
-	raw, err := settings.GetXrayConfigTemplate()
-	if err != nil {
-		logger.Warning("outbound health monitor: ", err)
-		return
-	}
-
-	var doc struct {
-		Outbounds []json.RawMessage `json:"outbounds"`
-		Routing   struct {
-			Balancers []struct {
-				Tag      string   `json:"tag"`
-				Selector []string `json:"selector"`
-			} `json:"balancers"`
-		} `json:"routing"`
-	}
-	if err := json.Unmarshal([]byte(raw), &doc); err != nil {
-		logger.Warning("outbound health monitor config: ", err)
-		return
-	}
-
 	state := outboundHealthState{
 		LastProbe: map[string]time.Time{},
 		Status: PersistentOutboundHealthStatus{
@@ -170,6 +150,41 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 	}
 
 	now := time.Now()
+	state.Status.LastError = ""
+	defer func() {
+		state.Status.LastRun = now
+		saved, saveErr := json.Marshal(state)
+		if saveErr == nil {
+			if saveErr = settings.saveSetting(outboundHealthStateKey, string(saved)); saveErr != nil {
+				logger.Warning("outbound health monitor status: ", saveErr)
+			}
+		} else {
+			logger.Warning("marshal outbound health monitor status: ", saveErr)
+		}
+	}()
+
+	raw, err := settings.GetXrayConfigTemplate()
+	if err != nil {
+		state.Status.LastError = err.Error()
+		logger.Warning("outbound health monitor: ", err)
+		return
+	}
+
+	var doc struct {
+		Outbounds []json.RawMessage `json:"outbounds"`
+		Routing   struct {
+			Balancers []struct {
+				Tag      string   `json:"tag"`
+				Selector []string `json:"selector"`
+			} `json:"balancers"`
+		} `json:"routing"`
+	}
+	if err := json.Unmarshal([]byte(raw), &doc); err != nil {
+		state.Status.LastError = err.Error()
+		logger.Warning("outbound health monitor config: ", err)
+		return
+	}
+
 	testURL, _ := settings.GetXrayOutboundTestUrl()
 	if testURL == "" {
 		testURL = "https://www.google.com/generate_204"
@@ -223,10 +238,22 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 		}
 
 		statuses, e := s.GetBalancersStatus([]string{bal.Tag})
-		if e != nil || len(statuses) == 0 || !statuses[0].Running {
+		if e != nil {
+			state.Status.LastError = e.Error()
+			continue
+		}
+		if len(statuses) == 0 || !statuses[0].Running {
 			continue
 		}
 		live := statuses[0]
+		// Xray's strategy target list is the live source of truth. The first
+		// configured outbound is only a fallback for older/empty live status.
+		for _, selected := range live.Selected {
+			if healthy[selected] {
+				preferred = selected
+				break
+			}
+		}
 		managed := state.Status.Managed[bal.Tag]
 		if live.Override != "" && managed == "" {
 			continue
@@ -267,21 +294,17 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 				break
 			}
 		}
-		if target != "" && live.Override == "" {
+		// Re-failover only when the existing override belongs to this monitor.
+		// Manual overrides are left untouched, but a monitor-managed override
+		// can be replaced if its target has also become unhealthy.
+		canChangeOverride := live.Override == "" || (managed != "" && live.Override == managed)
+		if target != "" && canChangeOverride {
 			if e := s.OverrideBalancer(bal.Tag, target); e != nil {
 				state.Status.LastError = e.Error()
 			} else {
 				state.Status.Managed[bal.Tag] = target
 				state.Status.Consecutive[bal.Tag] = 0
 			}
-		}
-	}
-
-	state.Status.LastRun = now
-	saved, e := json.Marshal(state)
-	if e == nil {
-		if e = settings.saveSetting(outboundHealthStateKey, string(saved)); e != nil {
-			logger.Warning("outbound health monitor status: ", e)
 		}
 	}
 }
