@@ -228,12 +228,16 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		if wanted[outboundTag] {
 			continue
 		}
-		_, _ = a.XraySettingService.SyncInboundRouting(inbound.Tag, "", []string{})
+		// Delete the inbound first so a route-cleanup failure cannot leave an
+		// active listener falling through to Xray's default outbound.
 		restart, err := a.InboundService.DelInbound(inbound.Id)
 		if err != nil {
 			return result, needRestart, err
 		}
 		needRestart = needRestart || restart
+		if _, err := a.XraySettingService.SyncInboundRouting(inbound.Tag, "", []string{}); err != nil {
+			return result, needRestart, err
+		}
 		result.Removed++
 	}
 	return result, needRestart, nil
