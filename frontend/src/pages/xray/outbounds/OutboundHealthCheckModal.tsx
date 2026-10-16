@@ -238,7 +238,11 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
                 title: 'Status',
                 dataIndex: 'success',
                 key: 'status',
-                render: (success: boolean) => <Tag color={success ? 'success' : 'error'}>{success ? 'Healthy' : 'Unreachable'}</Tag>,
+                render: (success: boolean) => (
+                  <Tag color={success ? 'success' : 'error'}>
+                    {success ? 'Healthy' : 'Unreachable'}
+                  </Tag>
+                ),
               },
               {
                 title: 'Delay',
