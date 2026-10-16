@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
@@ -12,6 +13,8 @@ import (
 
 const outboundHealthConfigKey = "outboundHealthMonitorConfig"
 const outboundHealthStateKey = "outboundHealthMonitorState"
+
+var persistentOutboundHealthMu sync.Mutex
 
 type PersistentOutboundHealthConfig struct {
 	Enabled bool `json:"enabled"`
@@ -57,6 +60,8 @@ func (s *SettingService) GetPersistentOutboundHealthStatus() (PersistentOutbound
 // RunPersistentOutboundHealthMonitor is called by cron and never requires an open browser.
 // It is opt-in and only clears overrides that it previously created.
 func (s *XrayService) RunPersistentOutboundHealthMonitor() {
+	persistentOutboundHealthMu.Lock()
+	defer persistentOutboundHealthMu.Unlock()
 	settings := &SettingService{}; cfg, err := settings.GetPersistentOutboundHealthConfig(); if err != nil || !cfg.Enabled { return }
 	raw, err := settings.GetXrayConfigTemplate(); if err != nil { logger.Warning("outbound health monitor: ", err); return }
 	var doc struct { Outbounds []json.RawMessage `json:"outbounds"`; Routing struct { Balancers []struct { Tag string `json:"tag"`; Selector []string `json:"selector"` } `json:"balancers"` } `json:"routing"` }
