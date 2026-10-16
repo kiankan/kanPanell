@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Button,
+  Divider,
   InputNumber,
   Modal,
   Select,
@@ -34,6 +36,21 @@ interface BalancerStatus {
   selected?: string[];
 }
 
+interface PersistentMonitorConfig {
+  enabled: boolean;
+  intervalSeconds: number;
+  failureThreshold: number;
+  testMode: 'tcp' | 'real';
+}
+
+interface PersistentMonitorStatus {
+  lastRun?: string;
+  lastError?: string;
+  healthy?: Record<string, boolean>;
+  consecutiveFailures?: Record<string, number>;
+  managedOverrides?: Record<string, string>;
+}
+
 export default function OutboundHealthCheckModal({ open, settings, onClose }: Props) {
   const [messageApi, contextHolder] = message.useMessage();
   const [balancerTag, setBalancerTag] = useState<string>();
@@ -43,6 +60,15 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
   const [results, setResults] = useState<ProbeResult[]>([]);
   const [lastCheck, setLastCheck] = useState<number>();
   const [managedOverride, setManagedOverride] = useState('');
+  const [monitorConfig, setMonitorConfig] = useState<PersistentMonitorConfig>({
+    enabled: false,
+    intervalSeconds: 60,
+    failureThreshold: 3,
+    testMode: 'tcp',
+  });
+  const [monitorStatus, setMonitorStatus] = useState<PersistentMonitorStatus>();
+  const [monitorLoading, setMonitorLoading] = useState(false);
+  const [monitorSaving, setMonitorSaving] = useState(false);
   const inFlight = useRef(false);
   const checkOnceRef = useRef<() => Promise<void>>(async () => {});
   const settingsRef = useRef(settings);
@@ -50,6 +76,67 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
+
+  useEffect(() => {
+    if (!open) return;
+    setMonitorLoading(true);
+    Promise.all([
+      HttpUtil.get<PersistentMonitorConfig>(
+        '/panel/api/xray/outbound-health/config',
+        undefined,
+        { silent: true },
+      ),
+      HttpUtil.get<PersistentMonitorStatus>(
+        '/panel/api/xray/outbound-health/status',
+        undefined,
+        { silent: true },
+      ),
+    ])
+      .then(([configResponse, statusResponse]) => {
+        if (configResponse?.success && configResponse.obj) {
+          setMonitorConfig({
+            enabled: Boolean(configResponse.obj.enabled),
+            intervalSeconds: Number(configResponse.obj.intervalSeconds || 60),
+            failureThreshold: Number(configResponse.obj.failureThreshold || 3),
+            testMode: configResponse.obj.testMode === 'real' ? 'real' : 'tcp',
+          });
+        } else {
+          messageApi.error(configResponse?.msg || 'Could not load persistent monitor settings.');
+        }
+        if (statusResponse?.success && statusResponse.obj) setMonitorStatus(statusResponse.obj);
+      })
+      .catch(() => {
+        messageApi.error('Could not load persistent outbound health monitor status.');
+      })
+      .finally(() => setMonitorLoading(false));
+  }, [open, messageApi]);
+
+  async function saveMonitorConfig() {
+    setMonitorSaving(true);
+    try {
+      const response = await HttpUtil.post<PersistentMonitorConfig>(
+        '/panel/api/xray/outbound-health/config',
+        monitorConfig,
+        { silent: true },
+      );
+      if (!response?.success || !response.obj) {
+        messageApi.error(response?.msg || 'Could not save persistent monitor settings.');
+        return;
+      }
+      setMonitorConfig(response.obj);
+      messageApi.success('Persistent outbound health monitor settings saved.');
+      const statusResponse = await HttpUtil.get<PersistentMonitorStatus>(
+        '/panel/api/xray/outbound-health/status',
+        undefined,
+        { silent: true },
+      );
+      if (statusResponse?.success && statusResponse.obj) setMonitorStatus(statusResponse.obj);
+    } catch {
+      messageApi.error('Could not save persistent monitor settings.');
+    } finally {
+      setMonitorSaving(false);
+    }
+  }
 
   const balancers = useMemo(
     () => (settings?.routing?.balancers || []).filter((b) => !!b?.tag),
@@ -130,7 +217,10 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
       const currentSelected = live?.selected?.[0] || '';
       // If the preferred (first matching) member has recovered, remove only an
       // override created by this monitor. Never clear a manual override.
-      const preferredTag = candidates[0]?.tag || '';
+      const preferredTag =
+        currentSelected && candidates.some((candidate) => candidate.tag === currentSelected)
+          ? currentSelected
+          : candidates[0]?.tag || '';
       if (managedOverride && healthy.has(preferredTag)) {
         if (currentOverride === managedOverride) {
           const clearResponse = await HttpUtil.post(
@@ -230,6 +320,80 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
           }
         />
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Typography.Title level={5} style={{ margin: 0 }}>
+            Persistent server-side monitor
+          </Typography.Title>
+          <Alert
+            type="info"
+            showIcon
+            message="Runs in the panel service, even when this dialog is closed."
+            description="This setting is saved on the server. It is independent of the browser-session failover controls below."
+          />
+          <Space wrap align="center">
+            <Typography.Text>Enable persistent monitoring</Typography.Text>
+            <Switch
+              checked={monitorConfig.enabled}
+              loading={monitorLoading}
+              onChange={(enabled) => setMonitorConfig((current) => ({ ...current, enabled }))}
+            />
+            <Typography.Text>Interval (seconds)</Typography.Text>
+            <InputNumber
+              min={15}
+              max={3600}
+              value={monitorConfig.intervalSeconds}
+              onChange={(value) =>
+                setMonitorConfig((current) => ({
+                  ...current,
+                  intervalSeconds: Math.min(3600, Math.max(15, Number(value) || 60)),
+                }))
+              }
+            />
+            <Typography.Text>Failure threshold</Typography.Text>
+            <InputNumber
+              min={1}
+              max={20}
+              value={monitorConfig.failureThreshold}
+              onChange={(value) =>
+                setMonitorConfig((current) => ({
+                  ...current,
+                  failureThreshold: Math.min(20, Math.max(1, Number(value) || 3)),
+                }))
+              }
+            />
+            <Select
+              value={monitorConfig.testMode}
+              onChange={(testMode: 'tcp' | 'real') =>
+                setMonitorConfig((current) => ({ ...current, testMode }))
+              }
+              options={[
+                { label: 'TCP probe', value: 'tcp' },
+                { label: 'Real request', value: 'real' },
+              ]}
+              style={{ minWidth: 130 }}
+            />
+            <Button type="primary" loading={monitorSaving} onClick={() => void saveMonitorConfig()}>
+              Save server settings
+            </Button>
+          </Space>
+          {monitorStatus && (
+            <Space direction="vertical" size={2}>
+              <Typography.Text type="secondary">
+                Last server run: {monitorStatus.lastRun ? new Date(monitorStatus.lastRun).toLocaleString() : 'Not run yet'}
+              </Typography.Text>
+              {monitorStatus.lastError && (
+                <Alert type="error" showIcon message={monitorStatus.lastError} />
+              )}
+              {Object.keys(monitorStatus.managedOverrides || {}).length > 0 && (
+                <Typography.Text>
+                  Monitor-managed overrides: {Object.entries(monitorStatus.managedOverrides || {}).map(([tag, target]) => tag + ' → ' + target).join(', ')}
+                </Typography.Text>
+              )}
+            </Space>
+          )}
+          <Divider style={{ margin: '8px 0' }} />
+          <Typography.Title level={5} style={{ margin: 0 }}>
+            Browser-session health check
+          </Typography.Title>
           <div>
             <Typography.Text strong>Balancer</Typography.Text>
             <Select
@@ -246,7 +410,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
             />
           </div>
           <Space wrap align="center">
-            <Typography.Text>Automatic failover</Typography.Text>
+            <Typography.Text>Automatic failover while dialog is open</Typography.Text>
             <Switch
               checked={enabled}
               onChange={setEnabled}
