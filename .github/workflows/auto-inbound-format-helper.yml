@@ -16,6 +16,6 @@ jobs:
         working-directory: frontend
       - name: Print formatter diff
         run: |
-          npx oxfmt src/pages/xray/outbounds/AutoInboundSettingsModal.tsx src/pages/xray/outbounds/OutboundsTab.tsx
+          npx oxfmt src/pages/xray/outbounds/AutoInboundSettingsModal.tsx src/pages/xray/outbounds/OutboundsTab.tsx src/pages/api-docs/endpoints.ts
           git diff -- src/pages/xray/outbounds/AutoInboundSettingsModal.tsx src/pages/xray/outbounds/OutboundsTab.tsx
         working-directory: frontend
