@@ -145,7 +145,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
             setManagedOverride('');
             messageApi.success(
               `Balancer ${selectedBalancer.tag}: preferred member recovered; ` +
-              'automatic override cleared.',
+                'automatic override cleared.',
             );
           }
         } else {
@@ -173,7 +173,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
             setManagedOverride(firstHealthy);
             messageApi.warning(
               `Balancer ${selectedBalancer.tag}: failed member ${activeTag}; ` +
-              `switched to ${firstHealthy}.`,
+                `switched to ${firstHealthy}.`,
             );
           } else {
             messageApi.error(
@@ -183,9 +183,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
         }
       }
     } catch (error) {
-      messageApi.error(
-        error instanceof Error ? error.message : 'Outbound health check failed',
-      );
+      messageApi.error(error instanceof Error ? error.message : 'Outbound health check failed');
     } finally {
       inFlight.current = false;
       setChecking(false);
@@ -295,8 +293,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
                 title: 'Delay',
                 dataIndex: 'delay',
                 key: 'delay',
-                render: (delay: number, row: ProbeResult) =>
-                  row.success ? `${delay} ms` : '—',
+                render: (delay: number, row: ProbeResult) => (row.success ? `${delay} ms` : '—'),
               },
               { title: 'Error', dataIndex: 'error', key: 'error', ellipsis: true },
             ]}
