@@ -34,11 +34,7 @@ interface BalancerStatus {
   selected?: string[];
 }
 
-export default function OutboundHealthCheckModal({
-  open,
-  settings,
-  onClose,
-}: Props) {
+export default function OutboundHealthCheckModal({ open, settings, onClose }: Props) {
   const [messageApi, contextHolder] = message.useMessage();
   const [balancerTag, setBalancerTag] = useState<string>();
   const [intervalSeconds, setIntervalSeconds] = useState(60);
