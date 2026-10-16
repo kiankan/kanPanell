@@ -361,6 +361,9 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	// Outbound subscription auto-refresh (respects per-sub updateInterval)
 	_, _ = s.cron.AddJob(cadenceOutboundSub, job.NewOutboundSubscriptionJob())
 
+	// Persistent outbound health monitoring runs server-side, even with no UI session.
+	_, _ = s.cron.AddJob("@every 15s", job.NewOutboundHealthMonitorJob())
+
 	_, _ = s.cron.AddJob(cadenceReapOrphans, job.NewReapSyncOrphansJob())
 
 	// Warm permanent routing URLs immediately and refresh them outside the
