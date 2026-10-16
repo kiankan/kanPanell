@@ -406,7 +406,6 @@ func (s *SettingService) ResetSettings() error {
 	})
 }
 
-
 // GetAutoInboundTLSConfig returns the stored dedicated TLS configuration.
 func (s *SettingService) GetAutoInboundTLSConfig() (AutoInboundTLSConfig, error) {
 	raw, err := s.getString("autoTLS")
