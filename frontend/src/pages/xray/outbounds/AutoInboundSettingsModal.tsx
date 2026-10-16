@@ -127,7 +127,14 @@ export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundS
           />
         </Form.Item>
       </Form>
-      {result && <Alert type="success" showIcon style={{ marginTop: 12 }} message={result} />}
+      {result && (
+        <Alert
+          type="success"
+          showIcon
+          style={{ marginTop: 12 }}
+          message={result}
+        />
+      )}
     </Modal>
   );
 }
