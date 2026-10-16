@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-func TestOutboundTagsFromTemplateDeduplicatesAndSkipsEmptyTags(t *testing.T) {
-	raw := `{"outbounds":[{"tag":"proxy-a"},{"tag":""},{"tag":"proxy-b"},{"tag":"proxy-a"}]}`
+func TestOutboundTagsFromTemplateSkipsEmptyTags(t *testing.T) {
+	raw := `{"outbounds":[{"tag":"proxy-a"},{"tag":""},{"tag":"proxy-b"}]}`
 	got, err := outboundTagsFromTemplate(raw)
 	if err != nil {
 		t.Fatalf("outboundTagsFromTemplate() error = %v", err)
@@ -15,6 +15,20 @@ func TestOutboundTagsFromTemplateDeduplicatesAndSkipsEmptyTags(t *testing.T) {
 	want := []string{"proxy-a", "proxy-b"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("outboundTagsFromTemplate() = %#v, want %#v", got, want)
+	}
+}
+
+func TestOutboundTagsFromTemplateRejectsDuplicateTags(t *testing.T) {
+	raw := `{"outbounds":[{"tag":"proxy-a"},{"tag":"proxy-a"}]}`
+	if _, err := outboundTagsFromTemplate(raw); err == nil {
+		t.Fatal("outboundTagsFromTemplate() expected an error for duplicate outbound tags")
+	}
+}
+
+func TestOutboundTagsFromTemplateRejectsWhitespaceTags(t *testing.T) {
+	raw := `{"outbounds":[{"tag":" proxy-a "}]}`
+	if _, err := outboundTagsFromTemplate(raw); err == nil {
+		t.Fatal("outboundTagsFromTemplate() expected an error for whitespace-padded tags")
 	}
 }
 
