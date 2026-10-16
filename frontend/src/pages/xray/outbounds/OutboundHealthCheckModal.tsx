@@ -33,6 +33,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
   const [lastCheck, setLastCheck] = useState<number>();
   const [managedOverride, setManagedOverride] = useState('');
   const inFlight = useRef(false);
+  const checkOnceRef = useRef<() => Promise<void>>(async () => {});
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
@@ -128,7 +129,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
         return;
       }
 
-      const activeTag = currentOverride || currentSelected;
+      const activeTag = currentOverride || currentSelected || preferredTag;
       if (activeTag && !healthy.has(activeTag)) {
         if (currentOverride && currentOverride !== managedOverride) {
           // Respect an override that was set manually or by another workflow.
@@ -155,12 +156,14 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
     }
   }
 
+  checkOnceRef.current = checkOnce;
+
   useEffect(() => {
     if (!open || !enabled || !selectedBalancer || candidates.length === 0) return;
-    void checkOnce();
-    const timer = window.setInterval(() => void checkOnce(), Math.max(15, intervalSeconds) * 1000);
+    void checkOnceRef.current();
+    const timer = window.setInterval(() => void checkOnceRef.current(), Math.max(15, intervalSeconds) * 1000);
     return () => window.clearInterval(timer);
-  }, [open, enabled, intervalSeconds, balancerTag, candidates.length]);
+  }, [open, enabled, intervalSeconds, balancerTag, candidates.length, selectedBalancer]);
 
   return (
     <>
