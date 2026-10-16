@@ -6,24 +6,8 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"regexp"
 	"strings"
 	"time"
-)
-
-var autoInboundDNSName = regexp.MustCompile(`(?i)^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+package service
-
-import (
-	"crypto/tls"
-	"crypto/x509"
-	"fmt"
-	"net"
-	"os"
-	"regexp"
-	"strings"
-	"time"
-)
-
 )
 
 // AutoInboundTLSConfig is the operator-supplied TLS material used by generated
@@ -39,7 +23,7 @@ type AutoInboundTLSConfig struct {
 // pair before any automatically managed inbound may be created.
 func (c AutoInboundTLSConfig) Validate() error {
 	domain := strings.TrimSpace(strings.TrimSuffix(c.Domain, "."))
-	if !autoInboundDNSName.MatchString(domain) || strings.ContainsAny(domain, " /\\\\:@?#") || net.ParseIP(domain) != nil {
+	if !validAutoInboundDomain(domain) || strings.ContainsAny(domain, " /\\\\:@?#") || net.ParseIP(domain) != nil {
 		return fmt.Errorf("a valid DNS domain is required for Auto Inbound TLS")
 	}
 	if strings.TrimSpace(c.CertificateFile) == "" || strings.TrimSpace(c.KeyFile) == "" {
@@ -81,15 +65,32 @@ func (c AutoInboundTLSConfig) Validate() error {
 		intermediates.AddCert(cert)
 	}
 	if _, err := leaf.Verify(x509.VerifyOptions{
-		DNSName: domain,
-		Roots: roots,
+		DNSName:       domain,
+		Roots:         roots,
 		Intermediates: intermediates,
-		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		CurrentTime: now,
+		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		CurrentTime:   now,
 	}); err != nil {
 		return fmt.Errorf("Auto Inbound certificate chain is not trusted for domain %q: %w", domain, err)
 	}
 	return nil
+}
+
+func validAutoInboundDomain(domain string) bool {
+	if !strings.Contains(domain, ".") {
+		return false
+	}
+	for _, label := range strings.Split(domain, ".") {
+		if len(label) == 0 || len(label) > 63 || label[0] == '-' || label[len(label)-1] == '-' {
+			return false
+		}
+		for _, r := range label {
+			if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '-' {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func readableRegularFile(path string) (string, error) {
