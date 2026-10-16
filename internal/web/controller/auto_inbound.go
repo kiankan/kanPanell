@@ -168,26 +168,31 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		}
 	}
 	wanted := map[string]bool{}
+	pending := map[string]*model.Inbound{}
 	result := &autoInboundResult{Skipped: []string{}}
 	needRestart := false
+
+	// Prepare new inbounds and route rules before enabling any new listener.
+	// Xray must have the exact inboundTag -> outboundTag rule loaded first;
+	// otherwise a hot-added inbound could briefly use the default outbound.
 	for _, outboundTag := range outboundTags {
 		wanted[outboundTag] = true
 		if existing := managed[outboundTag]; existing != nil {
-			routeChanged, err := a.XraySettingService.SyncInboundRouting(existing.Tag, existing.Tag, []string{outboundTag})
-			if err != nil {
-				return result, needRestart, err
+			routeChanged, routeErr := a.XraySettingService.SyncInboundRouting(existing.Tag, existing.Tag, []string{outboundTag})
+			if routeErr != nil {
+				return result, needRestart, routeErr
 			}
 			needRestart = needRestart || routeChanged
 			delete(managed, outboundTag)
 			continue
 		}
-		port, err := allocateAutoInboundPort(usedPorts)
-		if err != nil {
-			result.Skipped = append(result.Skipped, outboundTag+": "+err.Error())
+		port, portErr := allocateAutoInboundPort(usedPorts)
+		if portErr != nil {
+			result.Skipped = append(result.Skipped, outboundTag+": "+portErr.Error())
 			continue
 		}
 		clientID := uuid.NewString()
-		inbound := &model.Inbound{
+		pending[outboundTag] = &model.Inbound{
 			UserId:   userID,
 			Remark:   autoInboundRemarkPrefix + outboundTag,
 			Enable:   true,
@@ -213,18 +218,38 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 			}),
 			Sniffing: marshalAutoInbound(map[string]any{"enabled": true, "destOverride": []string{"http", "tls"}}),
 		}
-		created, restart, err := a.InboundService.AddInbound(inbound)
-		if err != nil {
-			result.Skipped = append(result.Skipped, outboundTag+": "+err.Error())
+	}
+
+	for outboundTag, inbound := range pending {
+		routeChanged, routeErr := a.XraySettingService.SyncInboundRouting("", inbound.Tag, []string{outboundTag})
+		if routeErr != nil {
+			result.Skipped = append(result.Skipped, outboundTag+": "+routeErr.Error())
+			delete(pending, outboundTag)
+			continue
+		}
+		needRestart = needRestart || routeChanged
+	}
+
+	// Apply all new/updated route rules before hot-adding the matching inbounds.
+	if needRestart && a.XrayService.IsXrayRunning() {
+		if err := a.XrayService.RestartXray(false); err != nil {
+			return result, true, fmt.Errorf("failed to apply Auto Inbound routes before creating listeners: %w", err)
+		}
+		needRestart = false
+	}
+
+	for outboundTag, inbound := range pending {
+		created, restart, addErr := a.InboundService.AddInbound(inbound)
+		if addErr != nil {
+			result.Skipped = append(result.Skipped, outboundTag+": "+addErr.Error())
+			routeChanged, cleanupErr := a.XraySettingService.SyncInboundRouting(inbound.Tag, "", []string{})
+			if cleanupErr != nil {
+				return result, true, fmt.Errorf("failed to clean route for uncreated inbound %q: %w", inbound.Tag, cleanupErr)
+			}
+			needRestart = needRestart || routeChanged
 			continue
 		}
 		needRestart = needRestart || restart
-		routeChanged, err := a.XraySettingService.SyncInboundRouting("", created.Tag, []string{outboundTag})
-		if err != nil {
-			_, _ = a.InboundService.DelInbound(created.Id)
-			return result, needRestart, fmt.Errorf("failed to route inbound %q only to outbound %q: %w", created.Tag, outboundTag, err)
-		}
-		needRestart = needRestart || routeChanged
 		result.Created++
 	}
 	for outboundTag, inbound := range managed {
