@@ -160,7 +160,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
 
   useEffect(() => {
     checkOnceRef.current = checkOnce;
-  }, [checkOnce]);
+  });
 
   useEffect(() => {
     if (!open || !enabled || !selectedBalancer || candidates.length === 0) return;
