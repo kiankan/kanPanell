@@ -16709,6 +16709,133 @@
           }
         ]
       }
+    },
+    "/panel/api/xray/outbound-health/config": {
+      "get": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "Read the persisted server-side outbound health monitor configuration.",
+        "operationId": "get_panel_api_xray_outbound_health_config",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "enabled": false,
+                  "intervalSeconds": 60,
+                  "failureThreshold": 3,
+                  "testMode": "tcp"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "Save the opt-in server-side outbound health monitor configuration.",
+        "operationId": "post_panel_api_xray_outbound_health_config",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "enabled": true,
+                "intervalSeconds": 60,
+                "failureThreshold": 3,
+                "testMode": "tcp"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "enabled": true,
+                    "intervalSeconds": 60,
+                    "failureThreshold": 3,
+                    "testMode": "tcp"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/xray/outbound-health/status": {
+      "get": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "Read the last persisted server-side outbound health monitor status.",
+        "operationId": "get_panel_api_xray_outbound_health_status",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "lastRun": "2026-10-16T00:00:00Z",
+                  "healthy": {
+                    "proxy-a": true
+                  },
+                  "consecutiveFailures": {},
+                  "managedOverrides": {}
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
