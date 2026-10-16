@@ -77,17 +77,28 @@ func autoInboundTag(outboundTag string) string {
 	return "auto-in-" + hex.EncodeToString(sum[:8])
 }
 
-func allocateAutoInboundPort() (int, error) {
-	listener, err := net.Listen("tcp", "0.0.0.0:0")
-	if err != nil {
-		return 0, fmt.Errorf("cannot allocate a free TCP port: %w", err)
+func allocateAutoInboundPort(used map[int]bool) (int, error) {
+	// Keep ports selected during this reconciliation reserved in-memory too:
+	// Xray is restarted only after the batch, so the OS could otherwise hand
+	// the same ephemeral port to multiple generated inbounds.
+	for attempt := 0; attempt < 32; attempt++ {
+		listener, err := net.Listen("tcp", "0.0.0.0:0")
+		if err != nil {
+			return 0, fmt.Errorf("cannot allocate a free TCP port: %w", err)
+		}
+		addr, ok := listener.Addr().(*net.TCPAddr)
+		if !ok {
+			_ = listener.Close()
+			return 0, fmt.Errorf("cannot determine allocated TCP port")
+		}
+		port := addr.Port
+		_ = listener.Close()
+		if !used[port] {
+			used[port] = true
+			return port, nil
+		}
 	}
-	defer listener.Close()
-	addr, ok := listener.Addr().(*net.TCPAddr)
-	if !ok {
-		return 0, fmt.Errorf("cannot determine allocated TCP port")
-	}
-	return addr.Port, nil
+	return 0, fmt.Errorf("could not allocate a unique TCP port after 32 attempts")
 }
 
 func outboundTagsFromTemplate(raw string) ([]string, error) {
@@ -131,7 +142,11 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		return nil, false, err
 	}
 	managed := map[string]*model.Inbound{}
+	usedPorts := map[int]bool{}
 	for _, inbound := range inbounds {
+		if inbound != nil && inbound.Port > 0 {
+			usedPorts[inbound.Port] = true
+		}
 		if inbound != nil && strings.HasPrefix(inbound.Remark, autoInboundRemarkPrefix) {
 			managed[strings.TrimPrefix(inbound.Remark, autoInboundRemarkPrefix)] = inbound
 		}
@@ -149,7 +164,7 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 			delete(managed, outboundTag)
 			continue
 		}
-		port, err := allocateAutoInboundPort()
+		port, err := allocateAutoInboundPort(usedPorts)
 		if err != nil {
 			result.Skipped = append(result.Skipped, outboundTag+": "+err.Error())
 			continue
