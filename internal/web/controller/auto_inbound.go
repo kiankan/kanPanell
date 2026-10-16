@@ -138,6 +138,21 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 	if err != nil {
 		return nil, false, err
 	}
+	// Active subscription outbounds are injected into Xray at runtime, so merge
+	// their current tags into the same reconciliation set as template outbounds.
+	if subscriptionTags, subErr := a.OutboundSubscriptionService.AllActiveOutboundTags(); subErr == nil {
+		seen := make(map[string]bool, len(outboundTags))
+		for _, tag := range outboundTags {
+			seen[tag] = true
+		}
+		for _, tag := range subscriptionTags {
+			tag = strings.TrimSpace(tag)
+			if tag != "" && !seen[tag] {
+				outboundTags = append(outboundTags, tag)
+				seen[tag] = true
+			}
+		}
+	}
 	inbounds, err := a.InboundService.GetInbounds(userID)
 	if err != nil {
 		return nil, false, err
