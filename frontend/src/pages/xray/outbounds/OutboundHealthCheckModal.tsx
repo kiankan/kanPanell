@@ -155,7 +155,13 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
       ) {
         return false;
       }
-      return selectors.some((prefix) => tag.startsWith(prefix));
+      return selectors.some((pattern) => {
+        try {
+          return new RegExp(pattern).test(tag);
+        } catch {
+          return false;
+        }
+      });
     });
   }, [selectedBalancer, settings?.outbounds]);
 
