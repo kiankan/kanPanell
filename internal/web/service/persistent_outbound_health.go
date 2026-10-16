@@ -281,10 +281,26 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 		}
 		healthy := map[string]bool{}
 		for _, result := range results {
-			if result != nil {
+			if result != nil && result.Tag != "" {
 				healthy[result.Tag] = result.Success
 				state.Status.Healthy[result.Tag] = result.Success
 			}
+		}
+		// A partial probe response is not evidence that a missing outbound is
+		// unhealthy. Do not increment failure counters or change the balancer
+		// unless every candidate has an explicit result.
+		resultsComplete := len(healthy) == len(candidateTags)
+		if resultsComplete {
+			for tag := range candidateTags {
+				if _, ok := healthy[tag]; !ok {
+					resultsComplete = false
+					break
+				}
+			}
+		}
+		if !resultsComplete {
+			state.Status.LastError = "incomplete outbound probe results for balancer " + bal.Tag
+			continue
 		}
 
 		statuses, e := s.GetBalancersStatus([]string{bal.Tag})
