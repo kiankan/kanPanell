@@ -59,7 +59,7 @@ var defaultValueMap = map[string]string{
 	"webPort":            "2053",
 	"webCertFile":        "",
 	"webKeyFile":         "",
-	"autoTLS":             "{}",
+	"autoTLS":            "{}",
 	"secret":             random.Seq(32),
 	"panelGuid":          uuid.NewString(),
 	"apiToken":           "",
