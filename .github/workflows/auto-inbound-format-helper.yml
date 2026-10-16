@@ -17,5 +17,13 @@ jobs:
       - name: Print formatter diff
         run: |
           npx oxfmt src/pages/xray/outbounds/AutoInboundSettingsModal.tsx src/pages/xray/outbounds/OutboundsTab.tsx src/pages/api-docs/endpoints.ts
-          git diff -- src/pages/xray/outbounds/AutoInboundSettingsModal.tsx src/pages/xray/outbounds/OutboundsTab.tsx
+          git diff -- src/pages/xray/outbounds/AutoInboundSettingsModal.tsx src/pages/xray/outbounds/OutboundsTab.tsx src/pages/api-docs/endpoints.ts
         working-directory: frontend
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Print Go formatter diff
+        run: |
+          go run mvdan.cc/gofumpt@latest -w internal/web/controller/auto_inbound.go internal/web/service/auto_inbound_tls.go internal/web/service/setting.go
+          git diff -- internal/web/controller/auto_inbound.go internal/web/service/auto_inbound_tls.go internal/web/service/setting.go
