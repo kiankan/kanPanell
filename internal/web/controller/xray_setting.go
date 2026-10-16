@@ -142,6 +142,20 @@ func (a *XraySettingController) getXraySetting(c *gin.Context) {
 	jsonObj(c, string(result), nil)
 }
 
+// applyAutoInboundRestart applies database safety changes even when reconciliation
+// fails partway through. Without this, Xray could keep serving a deleted inbound
+// or an old route until some unrelated restart occurs.
+func (a *XraySettingController) applyAutoInboundRestart(needRestart bool) error {
+	if !needRestart {
+		return nil
+	}
+	if a.XrayService.IsXrayRunning() {
+		return a.XrayService.RestartXray(false)
+	}
+	a.XrayService.SetToNeedRestart()
+	return nil
+}
+
 // updateSetting updates the Xray configuration settings and applies them to
 // the running core right away — through the gRPC API when only inbounds,
 // outbounds or routing rules changed, with a process restart otherwise.
@@ -159,6 +173,12 @@ func (a *XraySettingController) updateSetting(c *gin.Context) {
 		user := session.GetLoginUser(c)
 		result, needRestart, syncErr := a.syncAutoInbounds(user.Id, cfg)
 		if syncErr != nil {
+			// Reconciliation can fail after deleting an inbound or changing a
+			// route in the database. Apply those safety changes before returning;
+			// otherwise the running Xray process may keep serving a stale listener.
+			if restartErr := a.applyAutoInboundRestart(needRestart); restartErr != nil {
+				syncErr = fmt.Errorf("%w; failed to apply safety changes: %v", syncErr, restartErr)
+			}
 			jsonMsg(c, "Xray settings were saved, but Auto Inbound reconciliation failed", syncErr)
 			return
 		}
