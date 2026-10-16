@@ -31,10 +31,10 @@ func TestAutoInboundTLSConfigRejectsUnreadableOrInvalidFiles(t *testing.T) {
 	dir := t.TempDir()
 	cert := filepath.Join(dir, "cert.pem")
 	key := filepath.Join(dir, "key.pem")
-	if err := os.WriteFile(cert, []byte("not a certificate"), 0600); err != nil {
+	if err := os.WriteFile(cert, []byte("not a certificate"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(key, []byte("not a private key"), 0600); err != nil {
+	if err := os.WriteFile(key, []byte("not a private key"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	err := (AutoInboundTLSConfig{Domain: "vpn.example.com", CertificateFile: cert, KeyFile: key}).Validate()
