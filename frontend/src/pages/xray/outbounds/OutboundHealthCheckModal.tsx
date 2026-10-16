@@ -378,14 +378,20 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
           {monitorStatus && (
             <Space direction="vertical" size={2}>
               <Typography.Text type="secondary">
-                Last server run: {monitorStatus.lastRun ? new Date(monitorStatus.lastRun).toLocaleString() : 'Not run yet'}
+                Last server run:{' '}
+                {monitorStatus.lastRun
+                  ? new Date(monitorStatus.lastRun).toLocaleString()
+                  : 'Not run yet'}
               </Typography.Text>
               {monitorStatus.lastError && (
                 <Alert type="error" showIcon message={monitorStatus.lastError} />
               )}
               {Object.keys(monitorStatus.managedOverrides || {}).length > 0 && (
                 <Typography.Text>
-                  Monitor-managed overrides: {Object.entries(monitorStatus.managedOverrides || {}).map(([tag, target]) => tag + ' → ' + target).join(', ')}
+                  Monitor-managed overrides:{' '}
+                  {Object.entries(monitorStatus.managedOverrides || {})
+                    .map(([tag, target]) => tag + ' → ' + target)
+                    .join(', ')}
                 </Typography.Text>
               )}
             </Space>
