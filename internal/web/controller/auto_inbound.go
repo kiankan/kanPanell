@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
@@ -240,7 +241,7 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 				// cannot be verified or repaired.
 				_, deleteErr := a.InboundService.DelInbound(existing.Id)
 				if deleteErr != nil {
-					return result, true, fmt.Errorf("route repair failed for inbound %q and the inbound could not be removed: %v; %w", existing.Tag, routeErr, deleteErr)
+					return result, true, fmt.Errorf("route repair failed for inbound %q and the inbound could not be removed: %w; %w", existing.Tag, routeErr, deleteErr)
 				}
 				return result, true, fmt.Errorf("removed inbound %q because its exclusive outbound route could not be repaired: %w", existing.Tag, routeErr)
 			}
@@ -321,7 +322,7 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		if err := a.XrayService.RestartXray(false); err != nil {
 			for _, inbound := range routeRepairInbounds {
 				if _, deleteErr := a.InboundService.DelInbound(inbound.Id); deleteErr != nil {
-					return result, true, fmt.Errorf("route reload failed (%v) and inbound %q could not be removed: %w", err, inbound.Tag, deleteErr)
+					return result, true, fmt.Errorf("route reload failed (%w) and inbound %q could not be removed: %w", err, inbound.Tag, deleteErr)
 				}
 			}
 			return result, true, fmt.Errorf("failed to apply Auto Inbound routes before creating listeners: %w", err)
