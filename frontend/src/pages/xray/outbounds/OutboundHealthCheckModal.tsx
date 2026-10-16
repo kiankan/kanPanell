@@ -312,9 +312,9 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
-          message="Automatic checks run only while this dialog is open."
+          message="The browser-session check below runs only while this dialog is open."
           description={
-            'This monitor uses the existing Xray outbound probe and balancer override APIs. ' +
+            'The browser-session check uses the existing Xray outbound probe and balancer override APIs. ' +
             'It will not change an override that appears to be manually managed, and it will ' +
             'never switch to a member if every probe fails.'
           }
