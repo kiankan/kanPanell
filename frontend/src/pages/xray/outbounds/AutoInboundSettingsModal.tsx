@@ -21,27 +21,27 @@ interface AutoInboundTLSResult {
 
 export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundSettingsModalProps) {
   const [form] = Form.useForm<AutoInboundTLSConfig>();
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState('');
 
   useEffect(() => {
     if (!open) return;
-    HttpUtil.get<AutoInboundTLSConfig>('/panel/api/xray/auto-inbounds/config')
+    HttpUtil.get<AutoInboundTLSConfig>('/panel/api/xray/auto-inbounds/config', undefined, { silent: true })
       .then((r) => {
-        if (r?.success && r.obj) form.setFieldsValue(r.obj);
+        if (r.success && r.obj) form.setFieldsValue(r.obj);
+        else message.error(r.msg || 'Could not load Auto Inbound TLS settings.');
       })
       .catch(() => {
         message.error('Could not load Auto Inbound TLS settings.');
       })
-      .finally(() => setLoading(false));
+      ;
   }, [open, form]);
 
   async function submit(values: AutoInboundTLSConfig) {
     setSaving(true);
     setResult('');
     try {
-      const r = await HttpUtil.post<AutoInboundTLSResult>('/panel/api/xray/auto-inbounds/reconcile', values);
+      const r = await HttpUtil.post<AutoInboundTLSResult>('/panel/api/xray/auto-inbounds/reconcile', values, { silent: true });
       if (!r?.success) {
         message.error(r?.msg || 'Auto Inbound setup failed. No new inbound was created.');
         return;
@@ -84,7 +84,7 @@ export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundS
         message="No inbound is created unless the certificate and private key are readable, match each other, are currently valid, and cover the domain."
         description="Use absolute paths on the panel server. The domain must resolve to this server and the generated inbound ports must be reachable."
       />
-      <Form form={form} layout="vertical" onFinish={submit} disabled={loading || saving}>
+      <Form form={form} layout="vertical" onFinish={submit} disabled={saving}>
         <Form.Item
           name="domain"
           label="TLS domain"
