@@ -2256,17 +2256,35 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/xray/auto-inbounds/config',
-        summary: 'Read the configured domain and certificate/key file paths for dedicated Auto Inbounds.',
-        response: '{"domain":"vpn.example.com","certificateFile":"/etc/letsencrypt/live/vpn.example.com/fullchain.pem","keyFile":"/etc/letsencrypt/live/vpn.example.com/privkey.pem"}',
+        summary:
+          'Read the configured domain and certificate/key file paths for dedicated Auto Inbounds.',
+        response:
+          '{"domain":"vpn.example.com","certificateFile":"/etc/letsencrypt/live/vpn.example.com/fullchain.pem","keyFile":"/etc/letsencrypt/live/vpn.example.com/privkey.pem"}',
       },
       {
         method: 'POST',
         path: '/panel/api/xray/auto-inbounds/reconcile',
-        summary: 'Validate dedicated TLS material and reconcile one VLESS/TLS inbound per outbound. Invalid TLS settings create no inbounds.',
+        summary:
+          'Validate dedicated TLS material and reconcile one VLESS/TLS inbound per outbound. Invalid TLS settings create no inbounds.',
         params: [
-          { name: 'domain', in: 'body (json)', type: 'string', desc: 'DNS domain covered by the TLS certificate.' },
-          { name: 'certificateFile', in: 'body (json)', type: 'string', desc: 'Absolute path to the PEM certificate/full chain on the panel server.' },
-          { name: 'keyFile', in: 'body (json)', type: 'string', desc: 'Absolute path to the matching PEM private key on the panel server.' },
+          {
+            name: 'domain',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'DNS domain covered by the TLS certificate.',
+          },
+          {
+            name: 'certificateFile',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'Absolute path to the PEM certificate/full chain on the panel server.',
+          },
+          {
+            name: 'keyFile',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'Absolute path to the matching PEM private key on the panel server.',
+          },
         ],
         body: '{"domain":"vpn.example.com","certificateFile":"/etc/letsencrypt/live/vpn.example.com/fullchain.pem","keyFile":"/etc/letsencrypt/live/vpn.example.com/privkey.pem"}',
         response: '{"created":1,"removed":0,"skipped":[]}',
