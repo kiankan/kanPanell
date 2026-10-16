@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -229,6 +230,21 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 			continue
 		}
 
+		selectors := make([]*regexp.Regexp, 0, len(bal.Selector))
+		selectorInvalid := false
+		for _, selector := range bal.Selector {
+			compiled, compileErr := regexp.Compile(selector)
+			if compileErr != nil {
+				state.Status.LastError = "invalid selector for balancer " + bal.Tag + ": " + compileErr.Error()
+				selectorInvalid = true
+				break
+			}
+			selectors = append(selectors, compiled)
+		}
+		if selectorInvalid || len(selectors) == 0 {
+			continue
+		}
+
 		candidates := []json.RawMessage{}
 		candidateTags := map[string]bool{}
 		preferred := ""
@@ -240,8 +256,8 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 			if json.Unmarshal(rawOB, &ob) != nil || ob.Tag == "" {
 				continue
 			}
-			for _, prefix := range bal.Selector {
-				if strings.HasPrefix(ob.Tag, prefix) &&
+			for _, selector := range selectors {
+				if selector.MatchString(ob.Tag) &&
 					ob.Protocol != "freedom" && ob.Protocol != "blackhole" && ob.Protocol != "dns" {
 					candidates = append(candidates, rawOB)
 					candidateTags[ob.Tag] = true
