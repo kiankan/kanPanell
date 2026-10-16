@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, InputNumber, Modal, Select, Space, Switch, Table, Tag, Typography, message } from 'antd';
+import {
+  Alert,
+  InputNumber,
+  Modal,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
 import { HttpUtil } from '@/utils';
 import type { XraySettingsValue } from '@/hooks/useXraySetting';
 
@@ -23,7 +34,11 @@ interface BalancerStatus {
   selected?: string[];
 }
 
-export default function OutboundHealthCheckModal({ open, settings, onClose }: Props) {
+export default function OutboundHealthCheckModal({
+  open,
+  settings,
+  onClose,
+}: Props) {
   const [messageApi, contextHolder] = message.useMessage();
   const [balancerTag, setBalancerTag] = useState<string>();
   const [intervalSeconds, setIntervalSeconds] = useState(60);
@@ -51,7 +66,10 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
     const selectors = selectedBalancer.selector || [];
     return (settings?.outbounds || []).filter((outbound) => {
       const tag = outbound?.tag || '';
-      if (!tag || ['freedom', 'blackhole', 'dns'].includes((outbound.protocol || '').toLowerCase())) {
+      if (
+        !tag ||
+        ['freedom', 'blackhole', 'dns'].includes((outbound.protocol || '').toLowerCase())
+      ) {
         return false;
       }
       return selectors.some((prefix) => tag.startsWith(prefix));
@@ -119,10 +137,14 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
       const preferredTag = candidates[0]?.tag || '';
       if (managedOverride && healthy.has(preferredTag)) {
         if (currentOverride === managedOverride) {
-          const clearResponse = await HttpUtil.post('/panel/api/xray/balancerOverride', {
-            tag: selectedBalancer.tag,
-            target: '',
-          }, { silent: true });
+          const clearResponse = await HttpUtil.post(
+            '/panel/api/xray/balancerOverride',
+            {
+              tag: selectedBalancer.tag,
+              target: '',
+            },
+            { silent: true },
+          );
           if (clearResponse?.success) {
             setManagedOverride('');
             messageApi.success(
@@ -142,10 +164,14 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
           return;
         }
         if (firstHealthy !== currentOverride) {
-          const response = await HttpUtil.post('/panel/api/xray/balancerOverride', {
-            tag: selectedBalancer.tag,
-            target: firstHealthy,
-          }, { silent: true });
+          const response = await HttpUtil.post(
+            '/panel/api/xray/balancerOverride',
+            {
+              tag: selectedBalancer.tag,
+              target: firstHealthy,
+            },
+            { silent: true },
+          );
           if (response?.success) {
             setManagedOverride(firstHealthy);
             messageApi.warning(
@@ -159,7 +185,9 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
         }
       }
     } catch (error) {
-      messageApi.error(error instanceof Error ? error.message : 'Outbound health check failed');
+      messageApi.error(
+        error instanceof Error ? error.message : 'Outbound health check failed',
+      );
     } finally {
       inFlight.current = false;
       setChecking(false);
@@ -173,7 +201,10 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
   useEffect(() => {
     if (!open || !enabled || !selectedBalancer || candidates.length === 0) return;
     void checkOnceRef.current();
-    const timer = window.setInterval(() => void checkOnceRef.current(), Math.max(15, intervalSeconds) * 1000);
+    const timer = window.setInterval(
+      () => void checkOnceRef.current(),
+      Math.max(15, intervalSeconds) * 1000,
+    );
     return () => window.clearInterval(timer);
   }, [open, enabled, intervalSeconds, balancerTag, candidates.length, selectedBalancer]);
 
@@ -216,13 +247,19 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
           </div>
           <Space wrap align="center">
             <Typography.Text>Automatic failover</Typography.Text>
-            <Switch checked={enabled} onChange={setEnabled} disabled={!selectedBalancer || candidates.length === 0} />
+            <Switch
+              checked={enabled}
+              onChange={setEnabled}
+              disabled={!selectedBalancer || candidates.length === 0}
+            />
             <Typography.Text>Interval (seconds)</Typography.Text>
             <InputNumber
               min={15}
               max={3600}
               value={intervalSeconds}
-              onChange={(value) => setIntervalSeconds(Math.min(3600, Math.max(15, Number(value) || 60)))}
+              onChange={(value) =>
+                setIntervalSeconds(Math.min(3600, Math.max(15, Number(value) || 60)))
+              }
               disabled={enabled}
             />
             <Tag>{candidates.length} member(s)</Tag>
@@ -256,7 +293,8 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
                 title: 'Delay',
                 dataIndex: 'delay',
                 key: 'delay',
-                render: (delay: number, row: ProbeResult) => row.success ? `${delay} ms` : '—',
+                render: (delay: number, row: ProbeResult) =>
+                  row.success ? `${delay} ms` : '—',
               },
               { title: 'Error', dataIndex: 'error', key: 'error', ellipsis: true },
             ]}
