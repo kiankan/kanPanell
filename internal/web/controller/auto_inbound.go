@@ -171,6 +171,7 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 	pending := map[string]*model.Inbound{}
 	result := &autoInboundResult{Skipped: []string{}}
 	needRestart := false
+	routeRepairInbounds := []*model.Inbound{}
 
 	// Prepare new inbounds and route rules before enabling any new listener.
 	// Xray must have the exact inboundTag -> outboundTag rule loaded first;
@@ -189,6 +190,9 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 				return result, true, fmt.Errorf("removed inbound %q because its exclusive outbound route could not be repaired: %w", existing.Tag, routeErr)
 			}
 			needRestart = needRestart || routeChanged
+			if routeChanged {
+				routeRepairInbounds = append(routeRepairInbounds, existing)
+			}
 			delete(managed, outboundTag)
 			continue
 		}
@@ -258,6 +262,11 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 	// Apply all new/updated route rules before hot-adding the matching inbounds.
 	if (needRestart || len(pending) > 0) && a.XrayService.IsXrayRunning() {
 		if err := a.XrayService.RestartXray(false); err != nil {
+			for _, inbound := range routeRepairInbounds {
+				if _, deleteErr := a.InboundService.DelInbound(inbound.Id); deleteErr != nil {
+					return result, true, fmt.Errorf("route reload failed (%v) and inbound %q could not be removed: %w", err, inbound.Tag, deleteErr)
+				}
+			}
 			return result, true, fmt.Errorf("failed to apply Auto Inbound routes before creating listeners: %w", err)
 		}
 		needRestart = false
