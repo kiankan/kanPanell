@@ -231,7 +231,7 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 	}
 
 	// Apply all new/updated route rules before hot-adding the matching inbounds.
-	if needRestart && a.XrayService.IsXrayRunning() {
+	if (needRestart || len(pending) > 0) && a.XrayService.IsXrayRunning() {
 		if err := a.XrayService.RestartXray(false); err != nil {
 			return result, true, fmt.Errorf("failed to apply Auto Inbound routes before creating listeners: %w", err)
 		}
