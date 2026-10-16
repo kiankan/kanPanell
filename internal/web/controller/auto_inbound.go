@@ -222,12 +222,24 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		outboundTags = append(outboundTags, tag)
 		seen[tag] = true
 	}
+	// Ports are global to the Xray process, not scoped to the logged-in
+	// panel user. Use every inbound when reserving candidate ports, while only
+	// reconciling the current user's managed Auto Inbounds below.
+	allInbounds, err := a.InboundService.GetAllInbounds()
+	if err != nil {
+		return nil, false, err
+	}
 	inbounds, err := a.InboundService.GetInbounds(userID)
 	if err != nil {
 		return nil, false, err
 	}
 	managed := map[string][]*model.Inbound{}
 	usedPorts := map[int]bool{}
+	for _, inbound := range allInbounds {
+		if inbound != nil && inbound.Port > 0 {
+			usedPorts[inbound.Port] = true
+		}
+	}
 	usedTags := map[string]bool{}
 	for _, inbound := range inbounds {
 		if inbound != nil && inbound.Tag != "" {
