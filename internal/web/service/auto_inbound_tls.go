@@ -52,8 +52,26 @@ func (c AutoInboundTLSConfig) Validate() error {
 	if now.Before(leaf.NotBefore) || !now.Before(leaf.NotAfter) {
 		return fmt.Errorf("Auto Inbound certificate is not currently valid")
 	}
-	if err := leaf.VerifyHostname(domain); err != nil {
-		return fmt.Errorf("Auto Inbound certificate does not cover domain %q: %w", domain, err)
+	roots, err := x509.SystemCertPool()
+	if err != nil || roots == nil {
+		return fmt.Errorf("cannot load system trust roots to validate Auto Inbound certificate")
+	}
+	intermediates := x509.NewCertPool()
+	for _, der := range pair.Certificate[1:] {
+		cert, parseErr := x509.ParseCertificate(der)
+		if parseErr != nil {
+			return fmt.Errorf("cannot parse Auto Inbound intermediate certificate: %w", parseErr)
+		}
+		intermediates.AddCert(cert)
+	}
+	if _, err := leaf.Verify(x509.VerifyOptions{
+		DNSName: domain,
+		Roots: roots,
+		Intermediates: intermediates,
+		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		CurrentTime: now,
+	}); err != nil {
+		return fmt.Errorf("Auto Inbound certificate chain is not trusted for domain %q: %w", domain, err)
 	}
 	return nil
 }
