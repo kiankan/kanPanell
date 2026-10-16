@@ -106,7 +106,9 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
       const healthy = new Set(checked.filter((r) => r.success).map((r) => r.tag));
       const firstHealthy = candidates.find((o) => healthy.has(o.tag || ''))?.tag || '';
       if (!firstHealthy) {
-        messageApi.warning('All balancer members failed their health checks. No override was changed.');
+        messageApi.warning(
+          'All balancer members failed their health checks. No override was changed.',
+        );
         return;
       }
 
@@ -123,7 +125,9 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
           }, { silent: true });
           if (clearResponse?.success) {
             setManagedOverride('');
-            messageApi.success(`Balancer ${selectedBalancer.tag}: preferred member recovered; automatic override cleared.`);
+            messageApi.success(
+              `Balancer ${selectedBalancer.tag}: preferred member recovered; automatic override cleared.`,
+            );
           }
         } else {
           setManagedOverride('');
@@ -144,9 +148,13 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
           }, { silent: true });
           if (response?.success) {
             setManagedOverride(firstHealthy);
-            messageApi.warning(`Balancer ${selectedBalancer.tag}: failed member ${activeTag}; switched to ${firstHealthy}.`);
+            messageApi.warning(
+              `Balancer ${selectedBalancer.tag}: failed member ${activeTag}; switched to ${firstHealthy}.`,
+            );
           } else {
-            messageApi.error(response?.msg || 'Could not switch the balancer to a healthy outbound.');
+            messageApi.error(
+              response?.msg || 'Could not switch the balancer to a healthy outbound.',
+            );
           }
         }
       }
