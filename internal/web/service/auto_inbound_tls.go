@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -95,6 +96,9 @@ func validAutoInboundDomain(domain string) bool {
 
 func readableRegularFile(path string) (string, error) {
 	path = strings.TrimSpace(path)
+	if !filepath.IsAbs(path) {
+		return "", fmt.Errorf("path must be absolute")
+	}
 	info, err := os.Stat(path)
 	if err != nil {
 		return "", err
