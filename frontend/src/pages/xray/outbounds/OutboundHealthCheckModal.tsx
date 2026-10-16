@@ -102,7 +102,9 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
         } else {
           messageApi.error(configResponse?.msg || 'Could not load persistent monitor settings.');
         }
-        if (statusResponse?.success && statusResponse.obj) setMonitorStatus(statusResponse.obj);
+        if (statusResponse?.success && statusResponse.obj) {
+          setMonitorStatus(statusResponse.obj);
+        }
       })
       .catch(() => {
         messageApi.error('Could not load persistent outbound health monitor status.');
@@ -129,7 +131,9 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
         undefined,
         { silent: true },
       );
-      if (statusResponse?.success && statusResponse.obj) setMonitorStatus(statusResponse.obj);
+      if (statusResponse?.success && statusResponse.obj) {
+        setMonitorStatus(statusResponse.obj);
+      }
     } catch {
       messageApi.error('Could not save persistent monitor settings.');
     } finally {
@@ -376,7 +380,11 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
               ]}
               style={{ minWidth: 130 }}
             />
-            <Button type="primary" loading={monitorSaving} onClick={() => void saveMonitorConfig()}>
+            <Button
+              type="primary"
+              loading={monitorSaving}
+              onClick={() => void saveMonitorConfig()}
+            >
               Save server settings
             </Button>
           </Space>
