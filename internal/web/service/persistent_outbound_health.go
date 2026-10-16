@@ -198,6 +198,7 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 		}
 
 		candidates := []json.RawMessage{}
+		candidateTags := map[string]bool{}
 		preferred := ""
 		for _, rawOB := range doc.Outbounds {
 			var ob struct {
@@ -211,6 +212,7 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 				if strings.HasPrefix(ob.Tag, prefix) &&
 					ob.Protocol != "freedom" && ob.Protocol != "blackhole" && ob.Protocol != "dns" {
 					candidates = append(candidates, rawOB)
+					candidateTags[ob.Tag] = true
 					if preferred == "" {
 						preferred = ob.Tag
 					}
@@ -249,7 +251,7 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 		// Xray's strategy target list is the live source of truth. The first
 		// configured outbound is only a fallback for older/empty live status.
 		for _, selected := range live.Selected {
-			if healthy[selected] {
+			if candidateTags[selected] {
 				preferred = selected
 				break
 			}
