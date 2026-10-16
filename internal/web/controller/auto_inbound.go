@@ -8,11 +8,11 @@ import (
 	"net"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
-	"github.com/gin-gonic/gin"
 )
 
 const autoInboundRemarkPrefix = "[Auto Inbound] "
