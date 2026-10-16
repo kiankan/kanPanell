@@ -92,16 +92,26 @@ export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundS
         <Form.Item
           name="certificateFile"
           label="Certificate file path"
-          rules={[{ required: true, whitespace: true, message: 'Enter the certificate file path.' }]}
+          rules={[
+            { required: true, whitespace: true, message: 'Enter the certificate file path.' },
+          ]}
         >
-          <Input placeholder="/etc/letsencrypt/live/vpn.example.com/fullchain.pem" autoComplete="off" />
+          <Input
+            placeholder="/etc/letsencrypt/live/vpn.example.com/fullchain.pem"
+            autoComplete="off"
+          />
         </Form.Item>
         <Form.Item
           name="keyFile"
           label="Private key file path"
-          rules={[{ required: true, whitespace: true, message: 'Enter the private key file path.' }]}
+          rules={[
+            { required: true, whitespace: true, message: 'Enter the private key file path.' },
+          ]}
         >
-          <Input placeholder="/etc/letsencrypt/live/vpn.example.com/privkey.pem" autoComplete="off" />
+          <Input
+            placeholder="/etc/letsencrypt/live/vpn.example.com/privkey.pem"
+            autoComplete="off"
+          />
         </Form.Item>
       </Form>
       {result && <Alert type="success" showIcon style={{ marginTop: 12 }} message={result} />}
