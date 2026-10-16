@@ -166,8 +166,17 @@ func outboundTagsFromTemplate(raw string) ([]string, error) {
 	tags := make([]string, 0, len(template.Outbounds))
 	for _, outbound := range template.Outbounds {
 		tag := strings.TrimSpace(outbound.Tag)
-		if tag == "" || seen[tag] {
+		if tag == "" {
 			continue
+		}
+		if tag != outbound.Tag {
+			return nil, fmt.Errorf("outbound tag %q contains leading or trailing whitespace", outbound.Tag)
+		}
+		if seen[tag] {
+			// Xray routing by tag is ambiguous when two outbounds share a tag.
+			// Refuse reconciliation instead of silently routing a managed inbound
+			// to whichever duplicate Xray happens to resolve.
+			return nil, fmt.Errorf("duplicate outbound tag %q in Xray configuration", tag)
 		}
 		seen[tag] = true
 		tags = append(tags, tag)
