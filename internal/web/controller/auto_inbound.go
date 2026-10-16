@@ -69,7 +69,14 @@ func (a *XraySettingController) reconcileAutoInbounds(c *gin.Context) {
 		return
 	}
 	if needRestart {
-		a.XrayService.SetToNeedRestart()
+		if a.XrayService.IsXrayRunning() {
+			if err := a.XrayService.RestartXray(false); err != nil {
+				jsonMsg(c, "Auto Inbound routes were synchronized, but Xray could not be restarted", err)
+				return
+			}
+		} else {
+			a.XrayService.SetToNeedRestart()
+		}
 	}
 	jsonObj(c, result, nil)
 }
