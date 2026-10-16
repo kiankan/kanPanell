@@ -186,7 +186,7 @@ func (a *XraySettingController) updateSetting(c *gin.Context) {
 			// route in the database. Apply those safety changes before returning;
 			// otherwise the running Xray process may keep serving a stale listener.
 			if restartErr := a.applyAutoInboundRestart(needRestart); restartErr != nil {
-				syncErr = fmt.Errorf("%w; failed to apply safety changes: %v", syncErr, restartErr)
+				syncErr = fmt.Errorf("%w; failed to apply safety changes: %w", syncErr, restartErr)
 			}
 			jsonMsg(c, "Xray settings were saved, but Auto Inbound reconciliation failed", syncErr)
 			return
