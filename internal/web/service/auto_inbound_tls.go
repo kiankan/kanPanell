@@ -6,8 +6,24 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 	"time"
+)
+
+var autoInboundDNSName = regexp.MustCompile(`(?i)^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+package service
+
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"net"
+	"os"
+	"regexp"
+	"strings"
+	"time"
+)
+
 )
 
 // AutoInboundTLSConfig is the operator-supplied TLS material used by generated
@@ -23,7 +39,7 @@ type AutoInboundTLSConfig struct {
 // pair before any automatically managed inbound may be created.
 func (c AutoInboundTLSConfig) Validate() error {
 	domain := strings.TrimSpace(strings.TrimSuffix(c.Domain, "."))
-	if domain == "" || strings.ContainsAny(domain, " /\\\\:@?#") || net.ParseIP(domain) != nil {
+	if !autoInboundDNSName.MatchString(domain) || strings.ContainsAny(domain, " /\\\\:@?#") || net.ParseIP(domain) != nil {
 		return fmt.Errorf("a valid DNS domain is required for Auto Inbound TLS")
 	}
 	if strings.TrimSpace(c.CertificateFile) == "" || strings.TrimSpace(c.KeyFile) == "" {
