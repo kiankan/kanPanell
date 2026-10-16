@@ -741,7 +741,6 @@ func parseIntSafe(s string) (int, error) {
 	return v, err
 }
 
-
 // getOutboundHealthConfig returns the persisted server-side monitor configuration.
 func (a *XraySettingController) getOutboundHealthConfig(c *gin.Context) {
 	cfg, err := a.SettingService.GetPersistentOutboundHealthConfig()
