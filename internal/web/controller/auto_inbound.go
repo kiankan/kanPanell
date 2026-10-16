@@ -243,6 +243,13 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 				if deleteErr != nil {
 					return result, true, fmt.Errorf("route repair failed for inbound %q and the inbound could not be removed: %w; %w", existing.Tag, routeErr, deleteErr)
 				}
+				// DelInbound normally removes inbound references, but explicitly
+				// remove our managed route as well. This prevents a stale rule
+				// from surviving after an outbound was renamed or deleted.
+				_, cleanupErr := a.XraySettingService.SyncInboundRouting(existing.Tag, "", []string{})
+				if cleanupErr != nil {
+					return result, true, fmt.Errorf("removed inbound %q after route repair failed (%w), but its managed route could not be cleaned up: %w", existing.Tag, routeErr, cleanupErr)
+				}
 				return result, true, fmt.Errorf("removed inbound %q because its exclusive outbound route could not be repaired: %w", existing.Tag, routeErr)
 			}
 			needRestart = needRestart || routeChanged
