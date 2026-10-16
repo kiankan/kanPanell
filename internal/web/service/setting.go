@@ -54,6 +54,8 @@ const (
 
 var defaultValueMap = map[string]string{
 	"xrayTemplateConfig": xrayTemplateConfig,
+	"outboundHealthMonitorConfig": "{\"enabled\":false,\"intervalSeconds\":60,\"failureThreshold\":3,\"testMode\":\"tcp\"}",
+	"outboundHealthMonitorState": "{}",
 	"webListen":          "",
 	"webDomain":          "",
 	"webPort":            "2053",
