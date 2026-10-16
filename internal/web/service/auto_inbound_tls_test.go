@@ -43,6 +43,12 @@ func TestAutoInboundTLSConfigRejectsUnreadableOrInvalidFiles(t *testing.T) {
 	}
 }
 
+func TestReadableRegularFileRejectsRelativePath(t *testing.T) {
+	if _, err := readableRegularFile("relative.pem"); err == nil || !strings.Contains(err.Error(), "absolute") {
+		t.Fatalf("readableRegularFile(relative path) error = %v, want absolute-path error", err)
+	}
+}
+
 func TestReadableRegularFileRejectsDirectory(t *testing.T) {
 	_, err := readableRegularFile(t.TempDir())
 	if err == nil || !strings.Contains(err.Error(), "regular file") {
