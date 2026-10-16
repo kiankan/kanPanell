@@ -1,0 +1,34 @@
+name: One-time Oxfmt repair
+
+on:
+  push:
+    branches:
+      - feat/outbound-health-check-failover
+    paths:
+      - ".github/workflows/format-once.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  format-target:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Format target file with repository-pinned Oxfmt
+        working-directory: frontend
+        run: npx oxfmt --write src/pages/xray/outbounds/OutboundHealthCheckModal.tsx
+      - name: Verify formatting
+        working-directory: frontend
+        run: npx oxfmt --check src tools
+      - name: Print formatted file for retrieval
+        working-directory: frontend
+        run: cat src/pages/xray/outbounds/OutboundHealthCheckModal.tsx
