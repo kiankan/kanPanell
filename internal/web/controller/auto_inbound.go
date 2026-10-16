@@ -181,24 +181,29 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 	}
 	// Active subscription outbounds are injected into Xray at runtime, so merge
 	// their current tags into the same reconciliation set as template outbounds.
-	if subscriptionTags, subErr := a.OutboundSubscriptionService.AllActiveOutboundTags(); subErr == nil {
-		seen := make(map[string]bool, len(outboundTags))
-		for _, tag := range outboundTags {
+	subscriptionTags, err := a.OutboundSubscriptionService.AllActiveOutboundTags()
+	if err != nil {
+		// Reconciliation may delete stale managed inbounds. If subscription
+		// state cannot be read, abort before any mutation rather than treating
+		// temporarily unavailable subscription outbounds as deleted.
+		return nil, false, fmt.Errorf("cannot read active subscription outbound tags: %w", err)
+	}
+	seen := make(map[string]bool, len(outboundTags)+len(subscriptionTags))
+	for _, tag := range outboundTags {
+		seen[tag] = true
+	}
+	for _, tag := range subscriptionTags {
+		tag = strings.TrimSpace(tag)
+		if tag != "" && !seen[tag] {
+			outboundTags = append(outboundTags, tag)
 			seen[tag] = true
-		}
-		for _, tag := range subscriptionTags {
-			tag = strings.TrimSpace(tag)
-			if tag != "" && !seen[tag] {
-				outboundTags = append(outboundTags, tag)
-				seen[tag] = true
-			}
 		}
 	}
 	inbounds, err := a.InboundService.GetInbounds(userID)
 	if err != nil {
 		return nil, false, err
 	}
-	managed := map[string]*model.Inbound{}
+	managed := map[string][]*model.Inbound{}
 	usedPorts := map[int]bool{}
 	usedTags := map[string]bool{}
 	for _, inbound := range inbounds {
@@ -220,7 +225,7 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 			if outboundTag == "" {
 				outboundTag = "\x00orphan:" + inbound.Tag
 			}
-			managed[outboundTag] = inbound
+			managed[outboundTag] = append(managed[outboundTag], inbound)
 		}
 	}
 	wanted := map[string]bool{}
@@ -234,7 +239,11 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 	// otherwise a hot-added inbound could briefly use the default outbound.
 	for _, outboundTag := range outboundTags {
 		wanted[outboundTag] = true
-		if existing := managed[outboundTag]; existing != nil {
+		if existingList := managed[outboundTag]; len(existingList) > 0 {
+			// Keep one canonical inbound and explicitly clean up every duplicate.
+			// A map keyed directly by outboundTag used to overwrite duplicates,
+			// leaving the overwritten listeners permanently unmanaged.
+			existing := existingList[0]
 			routeChanged, routeErr := a.XraySettingService.SyncInboundRouting(existing.Tag, existing.Tag, []string{outboundTag})
 			if routeErr != nil {
 				// Never leave a managed listener active when its exclusive route
@@ -243,9 +252,6 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 				if deleteErr != nil {
 					return result, true, fmt.Errorf("route repair failed for inbound %q and the inbound could not be removed: %w; %w", existing.Tag, routeErr, deleteErr)
 				}
-				// DelInbound normally removes inbound references, but explicitly
-				// remove our managed route as well. This prevents a stale rule
-				// from surviving after an outbound was renamed or deleted.
 				_, cleanupErr := a.XraySettingService.SyncInboundRouting(existing.Tag, "", []string{})
 				if cleanupErr != nil {
 					return result, true, fmt.Errorf("removed inbound %q after route repair failed (%w), but its managed route could not be cleaned up: %w", existing.Tag, routeErr, cleanupErr)
@@ -257,6 +263,19 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 				routeRepairInbounds = append(routeRepairInbounds, existing)
 			}
 			delete(managed, outboundTag)
+			for _, duplicate := range existingList[1:] {
+				restart, deleteErr := a.InboundService.DelInbound(duplicate.Id)
+				if deleteErr != nil {
+					return result, needRestart, fmt.Errorf("cannot remove duplicate Auto Inbound %q for outbound %q: %w", duplicate.Tag, outboundTag, deleteErr)
+				}
+				needRestart = needRestart || restart
+				changed, cleanupErr := a.XraySettingService.SyncInboundRouting(duplicate.Tag, "", []string{})
+				if cleanupErr != nil {
+					return result, true, fmt.Errorf("removed duplicate Auto Inbound %q but could not clean its route: %w", duplicate.Tag, cleanupErr)
+				}
+				needRestart = needRestart || changed
+				result.Removed++
+			}
 			continue
 		}
 		port, portErr := allocateAutoInboundPort(usedPorts)
@@ -295,23 +314,25 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		}
 	}
 
-	for outboundTag, inbound := range managed {
+	for outboundTag, inbounds := range managed {
 		if wanted[outboundTag] {
 			continue
 		}
-		// Delete the inbound first so a route-cleanup failure cannot leave an
-		// active listener falling through to Xray's default outbound.
-		restart, err := a.InboundService.DelInbound(inbound.Id)
-		if err != nil {
-			return result, needRestart, err
+		for _, inbound := range inbounds {
+			// Delete the inbound first so a route-cleanup failure cannot leave an
+			// active listener falling through to Xray's default outbound.
+			restart, err := a.InboundService.DelInbound(inbound.Id)
+			if err != nil {
+				return result, needRestart, err
+			}
+			needRestart = needRestart || restart
+			routeChanged, err := a.XraySettingService.SyncInboundRouting(inbound.Tag, "", []string{})
+			if err != nil {
+				return result, needRestart, err
+			}
+			needRestart = needRestart || routeChanged
+			result.Removed++
 		}
-		needRestart = needRestart || restart
-		routeChanged, err := a.XraySettingService.SyncInboundRouting(inbound.Tag, "", []string{})
-		if err != nil {
-			return result, needRestart, err
-		}
-		needRestart = needRestart || routeChanged
-		result.Removed++
 	}
 
 	for outboundTag, inbound := range pending {
