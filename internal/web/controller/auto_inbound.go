@@ -220,6 +220,25 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		}
 	}
 
+	for outboundTag, inbound := range managed {
+		if wanted[outboundTag] {
+			continue
+		}
+		// Delete the inbound first so a route-cleanup failure cannot leave an
+		// active listener falling through to Xray's default outbound.
+		restart, err := a.InboundService.DelInbound(inbound.Id)
+		if err != nil {
+			return result, needRestart, err
+		}
+		needRestart = needRestart || restart
+		routeChanged, err := a.XraySettingService.SyncInboundRouting(inbound.Tag, "", []string{})
+		if err != nil {
+			return result, needRestart, err
+		}
+		needRestart = needRestart || routeChanged
+		result.Removed++
+	}
+
 	for outboundTag, inbound := range pending {
 		routeChanged, routeErr := a.XraySettingService.SyncInboundRouting("", inbound.Tag, []string{outboundTag})
 		if routeErr != nil {
@@ -251,24 +270,6 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		}
 		needRestart = needRestart || restart
 		result.Created++
-	}
-	for outboundTag, inbound := range managed {
-		if wanted[outboundTag] {
-			continue
-		}
-		// Delete the inbound first so a route-cleanup failure cannot leave an
-		// active listener falling through to Xray's default outbound.
-		restart, err := a.InboundService.DelInbound(inbound.Id)
-		if err != nil {
-			return result, needRestart, err
-		}
-		needRestart = needRestart || restart
-		routeChanged, err := a.XraySettingService.SyncInboundRouting(inbound.Tag, "", []string{})
-		if err != nil {
-			return result, needRestart, err
-		}
-		needRestart = needRestart || routeChanged
-		result.Removed++
 	}
 	return result, needRestart, nil
 }
