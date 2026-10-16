@@ -79,7 +79,6 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
 
   useEffect(() => {
     if (!open) return;
-    setMonitorLoading(true);
     Promise.all([
       HttpUtil.get<PersistentMonitorConfig>(
         '/panel/api/xray/outbound-health/config',
