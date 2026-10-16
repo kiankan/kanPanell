@@ -21,8 +21,6 @@ export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundS
 
   useEffect(() => {
     if (!open) return;
-    setResult('');
-    setLoading(true);
     HttpUtil.get('/panel/api/xray/auto-inbounds/config')
       .then((r) => {
         if (r?.success && r.obj) form.setFieldsValue(r.obj);
@@ -66,6 +64,7 @@ export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundS
       confirmLoading={saving}
       destroyOnHidden
       afterOpenChange={(visible) => {
+        if (visible) setResult('');
         if (!visible) {
           form.resetFields();
           setResult('');
