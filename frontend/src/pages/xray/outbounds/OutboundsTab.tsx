@@ -728,7 +728,10 @@ export default function OutboundsTab({
           onClose={() => setModalOpen(false)}
           onConfirm={onConfirm}
         />
-        <AutoInboundSettingsModal open={autoInboundOpen} onClose={() => setAutoInboundOpen(false)} />
+        <AutoInboundSettingsModal
+          open={autoInboundOpen}
+          onClose={() => setAutoInboundOpen(false)}
+        />
         <PromptModal
           open={importOpen}
           onClose={() => setImportOpen(false)}
