@@ -149,10 +149,19 @@ func (a *XraySettingController) applyAutoInboundRestart(needRestart bool) error 
 	if !needRestart {
 		return nil
 	}
-	if a.XrayService.IsXrayRunning() {
-		return a.XrayService.RestartXray(false)
+	if !a.XrayService.IsXrayRunning() {
+		a.XrayService.SetToNeedRestart()
+		return nil
 	}
-	a.XrayService.SetToNeedRestart()
+	if err := a.XrayService.RestartXray(false); err != nil {
+		// RestartXray can refuse a conflicting config while deliberately keeping
+		// the previous process alive. If reconciliation already removed or
+		// changed a safety-critical route, do not keep serving that stale config.
+		if stopErr := a.XrayService.StopXray(); stopErr != nil {
+			return fmt.Errorf("restart failed: %w; stopping Xray for safety also failed: %v", err, stopErr)
+		}
+		return fmt.Errorf("restart failed; Xray was stopped to avoid serving stale Auto Inbound routes: %w", err)
+	}
 	return nil
 }
 
