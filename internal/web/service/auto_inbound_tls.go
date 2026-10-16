@@ -14,7 +14,7 @@ import (
 // VLESS inbounds. Private-key contents are never stored in the panel database;
 // only paths are persisted.
 type AutoInboundTLSConfig struct {
-	Domain         string `json:"domain"`
+	Domain          string `json:"domain"`
 	CertificateFile string `json:"certificateFile"`
 	KeyFile         string `json:"keyFile"`
 }
