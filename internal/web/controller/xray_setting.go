@@ -153,12 +153,18 @@ func (a *XraySettingController) updateSetting(c *gin.Context) {
 	}
 	// Reconcile generated inbounds after outbound configuration changes, but
 	// never create any until the dedicated TLS settings validate successfully.
+	autoInboundRestarted := false
+	autoInboundNeedsRestart := false
 	if cfg, cfgErr := a.SettingService.GetAutoInboundTLSConfig(); cfgErr == nil && cfg.Validate() == nil {
 		user := session.GetLoginUser(c)
-		if _, needRestart, syncErr := a.syncAutoInbounds(user.Id, cfg); syncErr != nil {
+		result, needRestart, syncErr := a.syncAutoInbounds(user.Id, cfg)
+		if syncErr != nil {
 			jsonMsg(c, "Xray settings were saved, but Auto Inbound reconciliation failed", syncErr)
 			return
-		} else if needRestart {
+		}
+		autoInboundRestarted = result != nil && result.Restarted
+		autoInboundNeedsRestart = needRestart
+		if needRestart && !a.XrayService.IsXrayRunning() {
 			a.XrayService.SetToNeedRestart()
 		}
 	}
@@ -171,7 +177,7 @@ func (a *XraySettingController) updateSetting(c *gin.Context) {
 		return
 	}
 	// Only reconcile a running core; a manually stopped xray stays stopped.
-	if a.XrayService.IsXrayRunning() {
+	if a.XrayService.IsXrayRunning() && (!autoInboundRestarted || autoInboundNeedsRestart) {
 		if err := a.XrayService.RestartXray(false); err != nil {
 			jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 			return
