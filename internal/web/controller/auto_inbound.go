@@ -78,6 +78,16 @@ func autoInboundTag(outboundTag string) string {
 	return "auto-in-" + hex.EncodeToString(sum[:8])
 }
 
+func uniqueAutoInboundTag(outboundTag string, used map[string]bool) string {
+	base := autoInboundTag(outboundTag)
+	tag := base
+	for suffix := 1; used[tag]; suffix++ {
+		tag = fmt.Sprintf("%s-%d", base, suffix)
+	}
+	used[tag] = true
+	return tag
+}
+
 func allocateAutoInboundPort(used map[int]bool) (int, error) {
 	// Keep ports selected during this reconciliation reserved in-memory too:
 	// Xray is restarted only after the batch, so the OS could otherwise hand
@@ -159,7 +169,11 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 	}
 	managed := map[string]*model.Inbound{}
 	usedPorts := map[int]bool{}
+	usedTags := map[string]bool{}
 	for _, inbound := range inbounds {
+		if inbound != nil && inbound.Tag != "" {
+			usedTags[inbound.Tag] = true
+		}
 		if inbound != nil && inbound.Port > 0 {
 			usedPorts[inbound.Port] = true
 		}
@@ -202,15 +216,17 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 			continue
 		}
 		clientID := uuid.NewString()
+		inboundTag := uniqueAutoInboundTag(outboundTag, usedTags)
+		clientEmail := "auto-" + strings.ReplaceAll(clientID, "-", "")
 		pending[outboundTag] = &model.Inbound{
 			UserId:   userID,
 			Remark:   autoInboundRemarkPrefix + outboundTag,
 			Enable:   true,
 			Port:     port,
 			Protocol: model.VLESS,
-			Tag:      autoInboundTag(outboundTag),
+			Tag:      inboundTag,
 			Settings: marshalAutoInbound(map[string]any{
-				"clients":    []any{map[string]any{"id": clientID, "email": autoInboundTag(outboundTag)}},
+				"clients":    []any{map[string]any{"id": clientID, "email": clientEmail}},
 				"decryption": "none",
 				"encryption": "none",
 			}),
