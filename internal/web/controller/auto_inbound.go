@@ -79,15 +79,9 @@ func (a *XraySettingController) reconcileAutoInbounds(c *gin.Context) {
 		jsonMsg(c, "Auto Inbound reconciliation failed", err)
 		return
 	}
-	if needRestart {
-		if a.XrayService.IsXrayRunning() {
-			if err := a.XrayService.RestartXray(false); err != nil {
-				jsonMsg(c, "Auto Inbound routes were synchronized, but Xray could not be restarted", err)
-				return
-			}
-		} else {
-			a.XrayService.SetToNeedRestart()
-		}
+	if err := a.applyAutoInboundRestart(needRestart); err != nil {
+		jsonMsg(c, "Auto Inbound routes were synchronized, but Xray could not safely apply them", err)
+		return
 	}
 	jsonObj(c, result, nil)
 }
