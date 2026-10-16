@@ -49,9 +49,9 @@ func (a *XraySettingController) reconcileAutoInbounds(c *gin.Context) {
 		return
 	}
 	cfg := service.AutoInboundTLSConfig{
-		Domain: strings.TrimSpace(req.Domain),
+		Domain:          strings.TrimSpace(req.Domain),
 		CertificateFile: strings.TrimSpace(req.CertificateFile),
-		KeyFile: strings.TrimSpace(req.KeyFile),
+		KeyFile:         strings.TrimSpace(req.KeyFile),
 	}
 	if err := cfg.Validate(); err != nil {
 		jsonMsg(c, "Auto Inbound TLS settings are invalid; no inbound was created", err)
@@ -187,25 +187,25 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 		}
 		clientID := uuid.NewString()
 		inbound := &model.Inbound{
-			UserId: userID,
-			Remark: autoInboundRemarkPrefix + outboundTag,
-			Enable: true,
-			Port: port,
+			UserId:   userID,
+			Remark:   autoInboundRemarkPrefix + outboundTag,
+			Enable:   true,
+			Port:     port,
 			Protocol: model.VLESS,
-			Tag: autoInboundTag(outboundTag),
+			Tag:      autoInboundTag(outboundTag),
 			Settings: marshalAutoInbound(map[string]any{
-				"clients": []any{map[string]any{"id": clientID, "email": autoInboundTag(outboundTag)}},
+				"clients":    []any{map[string]any{"id": clientID, "email": autoInboundTag(outboundTag)}},
 				"decryption": "none",
 				"encryption": "none",
 			}),
 			StreamSettings: marshalAutoInbound(map[string]any{
-				"network": "tcp",
+				"network":  "tcp",
 				"security": "tls",
 				"tlsSettings": map[string]any{
 					"serverName": cfg.Domain,
 					"certificates": []any{map[string]any{
 						"certificateFile": cfg.CertificateFile,
-						"keyFile": cfg.KeyFile,
+						"keyFile":         cfg.KeyFile,
 					}},
 					"alpn": []string{"h2", "http/1.1"},
 				},
