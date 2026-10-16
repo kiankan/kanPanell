@@ -60,6 +60,8 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/balancerOverride", a.balancerOverride)
 	g.POST("/routeTest", a.routeTest)
 	g.POST("/addOutboundRelay", a.addOutboundRelay)
+	g.GET("/auto-inbounds/config", a.getAutoInboundTLSConfig)
+	g.POST("/auto-inbounds/reconcile", a.reconcileAutoInbounds)
 
 	g.GET("/geodata/files", a.geodataFiles)
 	g.GET("/geodata/categories", a.geodataCategories)
@@ -148,6 +150,17 @@ func (a *XraySettingController) updateSetting(c *gin.Context) {
 	if err := a.XraySettingService.SaveXraySetting(xraySetting); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 		return
+	}
+	// Reconcile generated inbounds after outbound configuration changes, but
+	// never create any until the dedicated TLS settings validate successfully.
+	if cfg, cfgErr := a.SettingService.GetAutoInboundTLSConfig(); cfgErr == nil && cfg.Validate() == nil {
+		user := session.GetLoginUser(c)
+		if _, needRestart, syncErr := a.syncAutoInbounds(user.Id, cfg); syncErr != nil {
+			jsonMsg(c, "Xray settings were saved, but Auto Inbound reconciliation failed", syncErr)
+			return
+		} else if needRestart {
+			a.XrayService.SetToNeedRestart()
+		}
 	}
 	outboundTestUrl := c.PostForm("outboundTestUrl")
 	if outboundTestUrl == "" {
