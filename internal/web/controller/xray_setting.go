@@ -60,6 +60,8 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/balancerOverride", a.balancerOverride)
 	g.POST("/routeTest", a.routeTest)
 	g.POST("/addOutboundRelay", a.addOutboundRelay)
+	g.GET("/auto-inbounds/config", a.getAutoInboundTLSConfig)
+	g.POST("/auto-inbounds/reconcile", a.reconcileAutoInbounds)
 
 	g.GET("/geodata/files", a.geodataFiles)
 	g.GET("/geodata/categories", a.geodataCategories)
@@ -140,6 +142,29 @@ func (a *XraySettingController) getXraySetting(c *gin.Context) {
 	jsonObj(c, string(result), nil)
 }
 
+// applyAutoInboundRestart applies database safety changes even when reconciliation
+// fails partway through. Without this, Xray could keep serving a deleted inbound
+// or an old route until some unrelated restart occurs.
+func (a *XraySettingController) applyAutoInboundRestart(needRestart bool) error {
+	if !needRestart {
+		return nil
+	}
+	if !a.XrayService.IsXrayRunning() {
+		a.XrayService.SetToNeedRestart()
+		return nil
+	}
+	if err := a.XrayService.RestartXray(false); err != nil {
+		// RestartXray can refuse a conflicting config while deliberately keeping
+		// the previous process alive. If reconciliation already removed or
+		// changed a safety-critical route, do not keep serving that stale config.
+		if stopErr := a.XrayService.StopXray(); stopErr != nil {
+			return fmt.Errorf("restart failed: %w; stopping Xray for safety also failed: %w", err, stopErr)
+		}
+		return fmt.Errorf("restart failed; Xray was stopped to avoid serving stale Auto Inbound routes: %w", err)
+	}
+	return nil
+}
+
 // updateSetting updates the Xray configuration settings and applies them to
 // the running core right away — through the gRPC API when only inbounds,
 // outbounds or routing rules changed, with a process restart otherwise.
@@ -148,6 +173,29 @@ func (a *XraySettingController) updateSetting(c *gin.Context) {
 	if err := a.XraySettingService.SaveXraySetting(xraySetting); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 		return
+	}
+	// Reconcile generated inbounds after outbound configuration changes, but
+	// never create any until the dedicated TLS settings validate successfully.
+	autoInboundRestarted := false
+	autoInboundNeedsRestart := false
+	if cfg, cfgErr := a.SettingService.GetAutoInboundTLSConfig(); cfgErr == nil && cfg.Validate() == nil {
+		user := session.GetLoginUser(c)
+		result, needRestart, syncErr := a.syncAutoInbounds(user.Id, cfg)
+		if syncErr != nil {
+			// Reconciliation can fail after deleting an inbound or changing a
+			// route in the database. Apply those safety changes before returning;
+			// otherwise the running Xray process may keep serving a stale listener.
+			if restartErr := a.applyAutoInboundRestart(needRestart); restartErr != nil {
+				syncErr = fmt.Errorf("%w; failed to apply safety changes: %w", syncErr, restartErr)
+			}
+			jsonMsg(c, "Xray settings were saved, but Auto Inbound reconciliation failed", syncErr)
+			return
+		}
+		autoInboundRestarted = result != nil && result.Restarted
+		autoInboundNeedsRestart = needRestart
+		if needRestart && !a.XrayService.IsXrayRunning() {
+			a.XrayService.SetToNeedRestart()
+		}
 	}
 	outboundTestUrl := c.PostForm("outboundTestUrl")
 	if outboundTestUrl == "" {
@@ -158,7 +206,7 @@ func (a *XraySettingController) updateSetting(c *gin.Context) {
 		return
 	}
 	// Only reconcile a running core; a manually stopped xray stays stopped.
-	if a.XrayService.IsXrayRunning() {
+	if a.XrayService.IsXrayRunning() && (!autoInboundRestarted || autoInboundNeedsRestart) {
 		if err := a.XrayService.RestartXray(false); err != nil {
 			jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 			return

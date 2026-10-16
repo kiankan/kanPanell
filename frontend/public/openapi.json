@@ -13888,6 +13888,110 @@
         }
       }
     },
+    "/panel/api/xray/auto-inbounds/config": {
+      "get": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "Read the configured domain and certificate/key file paths for dedicated Auto Inbounds.",
+        "operationId": "get_panel_api_xray_auto_inbounds_config",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "domain": "vpn.example.com",
+                  "certificateFile": "/etc/letsencrypt/live/vpn.example.com/fullchain.pem",
+                  "keyFile": "/etc/letsencrypt/live/vpn.example.com/privkey.pem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/xray/auto-inbounds/reconcile": {
+      "post": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "Validate dedicated TLS material and reconcile one VLESS/TLS inbound per outbound. Invalid TLS settings create no inbounds.",
+        "operationId": "post_panel_api_xray_auto_inbounds_reconcile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "description": "DNS domain covered by the TLS certificate."
+                  },
+                  "certificateFile": {
+                    "type": "string",
+                    "description": "Absolute path to the PEM certificate/full chain on the panel server."
+                  },
+                  "keyFile": {
+                    "type": "string",
+                    "description": "Absolute path to the matching PEM private key on the panel server."
+                  }
+                },
+                "required": [
+                  "domain",
+                  "certificateFile",
+                  "keyFile"
+                ]
+              },
+              "example": {
+                "domain": "vpn.example.com",
+                "certificateFile": "/etc/letsencrypt/live/vpn.example.com/fullchain.pem",
+                "keyFile": "/etc/letsencrypt/live/vpn.example.com/privkey.pem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "created": 1,
+                  "removed": 0,
+                  "skipped": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/xray/addOutboundRelay": {
       "post": {
         "tags": [

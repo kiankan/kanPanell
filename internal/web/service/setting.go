@@ -59,6 +59,7 @@ var defaultValueMap = map[string]string{
 	"webPort":            "2053",
 	"webCertFile":        "",
 	"webKeyFile":         "",
+	"autoTLS":            "{}",
 	"secret":             random.Seq(32),
 	"panelGuid":          uuid.NewString(),
 	"apiToken":           "",
@@ -403,6 +404,37 @@ func (s *SettingService) ResetSettings() error {
 		}
 		return tx.Create(&paths).Error
 	})
+}
+
+// GetAutoInboundTLSConfig returns the stored dedicated TLS configuration.
+func (s *SettingService) GetAutoInboundTLSConfig() (AutoInboundTLSConfig, error) {
+	raw, err := s.getString("autoTLS")
+	if err != nil {
+		return AutoInboundTLSConfig{}, err
+	}
+	var cfg AutoInboundTLSConfig
+	if strings.TrimSpace(raw) == "" || strings.TrimSpace(raw) == "{}" {
+		return cfg, nil
+	}
+	if err := json.Unmarshal([]byte(raw), &cfg); err != nil {
+		return AutoInboundTLSConfig{}, common.NewError("invalid Auto Inbound TLS settings:", err)
+	}
+	return cfg, nil
+}
+
+// SaveAutoInboundTLSConfig validates all TLS inputs before persisting them.
+func (s *SettingService) SaveAutoInboundTLSConfig(cfg AutoInboundTLSConfig) error {
+	cfg.Domain = strings.ToLower(strings.TrimSuffix(strings.TrimSpace(cfg.Domain), "."))
+	cfg.CertificateFile = strings.TrimSpace(cfg.CertificateFile)
+	cfg.KeyFile = strings.TrimSpace(cfg.KeyFile)
+	if err := cfg.Validate(); err != nil {
+		return err
+	}
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return s.saveSetting("autoTLS", string(raw))
 }
 
 func (s *SettingService) getSetting(key string) (*model.Setting, error) {
