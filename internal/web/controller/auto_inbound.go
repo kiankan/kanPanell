@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -82,7 +83,7 @@ func allocateAutoInboundPort(used map[int]bool) (int, error) {
 	// Xray is restarted only after the batch, so the OS could otherwise hand
 	// the same ephemeral port to multiple generated inbounds.
 	for attempt := 0; attempt < 32; attempt++ {
-		listener, err := net.Listen("tcp", "0.0.0.0:0")
+		listener, err := (net.ListenConfig{}).Listen(context.Background(), "tcp", "0.0.0.0:0")
 		if err != nil {
 			return 0, fmt.Errorf("cannot allocate a free TCP port: %w", err)
 		}
