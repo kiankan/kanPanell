@@ -23,6 +23,7 @@ import {
   CloudOutlined,
   ApiOutlined,
   MoreOutlined,
+  SettingOutlined,
   RetweetOutlined,
   PlayCircleOutlined,
   ReloadOutlined,
@@ -44,6 +45,7 @@ import PromptModal from '@/components/feedback/PromptModal';
 import TextModal from '@/components/feedback/TextModal';
 
 import OutboundFormModal from './OutboundFormModal';
+import AutoInboundSettingsModal from './AutoInboundSettingsModal';
 import { propagateOutboundTagRename } from '../basics/helpers';
 import { planOutboundDeletion, applyOutboundDeletion } from '../reference-cleanup';
 import DeletionImpactList from '../DeletionImpactList';
@@ -128,6 +130,7 @@ export default function OutboundsTab({
   const [messageApi, messageContextHolder] = message.useMessage();
   const [testMode, setTestMode] = useState<OutboundTestMode>('tcp');
   const [modalOpen, setModalOpen] = useState(false);
+  const [autoInboundOpen, setAutoInboundOpen] = useState(false);
   const [editingOutbound, setEditingOutbound] = useState<Record<string, unknown> | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [existingTags, setExistingTags] = useState<string[]>([]);
@@ -610,6 +613,9 @@ export default function OutboundsTab({
               <Button icon={<CloudOutlined />} onClick={openSubManager}>
                 {t('pages.xray.outboundSub.manage')}
               </Button>
+              <Button icon={<SettingOutlined />} onClick={() => setAutoInboundOpen(true)}>
+                Auto Inbound
+              </Button>
               <Dropdown
                 trigger={['click']}
                 menu={{
@@ -722,6 +728,7 @@ export default function OutboundsTab({
           onClose={() => setModalOpen(false)}
           onConfirm={onConfirm}
         />
+        <AutoInboundSettingsModal open={autoInboundOpen} onClose={() => setAutoInboundOpen(false)} />
         <PromptModal
           open={importOpen}
           onClose={() => setImportOpen(false)}
