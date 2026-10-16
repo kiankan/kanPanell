@@ -58,6 +58,9 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/testOutbounds", a.testOutbounds)
 	g.POST("/balancerStatus", a.balancerStatus)
 	g.POST("/balancerOverride", a.balancerOverride)
+	g.GET("/outbound-health/config", a.getOutboundHealthConfig)
+	g.POST("/outbound-health/config", a.saveOutboundHealthConfig)
+	g.GET("/outbound-health/status", a.getOutboundHealthStatus)
 	g.POST("/routeTest", a.routeTest)
 	g.POST("/addOutboundRelay", a.addOutboundRelay)
 	g.GET("/auto-inbounds/config", a.getAutoInboundTLSConfig)
@@ -736,4 +739,39 @@ func parseIntSafe(s string) (int, error) {
 	var v int
 	_, err := fmt.Sscanf(s, "%d", &v)
 	return v, err
+}
+
+
+// getOutboundHealthConfig returns the persisted server-side monitor configuration.
+func (a *XraySettingController) getOutboundHealthConfig(c *gin.Context) {
+	cfg, err := a.SettingService.GetPersistentOutboundHealthConfig()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonObj(c, cfg, nil)
+}
+
+// saveOutboundHealthConfig validates and persists the opt-in background monitor configuration.
+func (a *XraySettingController) saveOutboundHealthConfig(c *gin.Context) {
+	var cfg service.PersistentOutboundHealthConfig
+	if err := c.ShouldBindJSON(&cfg); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	if err := a.SettingService.SavePersistentOutboundHealthConfig(cfg); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonObj(c, cfg, nil)
+}
+
+// getOutboundHealthStatus returns the last persisted background monitor result.
+func (a *XraySettingController) getOutboundHealthStatus(c *gin.Context) {
+	status, err := a.SettingService.GetPersistentOutboundHealthStatus()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonObj(c, status, nil)
 }
