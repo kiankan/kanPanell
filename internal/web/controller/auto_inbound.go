@@ -25,9 +25,10 @@ type autoInboundTLSRequest struct {
 }
 
 type autoInboundResult struct {
-	Created int      `json:"created"`
-	Removed int      `json:"removed"`
-	Skipped []string `json:"skipped"`
+	Created   int      `json:"created"`
+	Removed   int      `json:"removed"`
+	Skipped   []string `json:"skipped"`
+	Restarted bool     `json:"-"`
 }
 
 // getAutoInboundTLSConfig returns only the dedicated TLS file paths and domain.
@@ -318,6 +319,7 @@ func (a *XraySettingController) syncAutoInbounds(userID int, cfg service.AutoInb
 			}
 			return result, true, fmt.Errorf("failed to apply Auto Inbound routes before creating listeners: %w", err)
 		}
+		result.Restarted = true
 		needRestart = false
 	}
 
