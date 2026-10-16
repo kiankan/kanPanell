@@ -2,6 +2,7 @@ package controller
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -20,6 +21,18 @@ func TestOutboundTagsFromTemplateDeduplicatesAndSkipsEmptyTags(t *testing.T) {
 func TestOutboundTagsFromTemplateRejectsInvalidJSON(t *testing.T) {
 	if _, err := outboundTagsFromTemplate(`{"outbounds":`); err == nil {
 		t.Fatal("outboundTagsFromTemplate() expected an error for invalid JSON")
+	}
+}
+
+func TestUniqueAutoInboundTagAvoidsExistingTags(t *testing.T) {
+	base := autoInboundTag("proxy-a")
+	used := map[string]bool{base: true}
+	got := uniqueAutoInboundTag("proxy-a", used)
+	if got == base || !strings.HasPrefix(got, base+"-") {
+		t.Fatalf("uniqueAutoInboundTag() = %q, want a suffixed tag based on %q", got, base)
+	}
+	if !used[got] {
+		t.Fatalf("uniqueAutoInboundTag() did not reserve generated tag %q", got)
 	}
 }
 
