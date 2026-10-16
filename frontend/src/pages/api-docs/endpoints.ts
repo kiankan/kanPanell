@@ -2256,21 +2256,27 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/xray/outbound-health/config',
-        summary: 'Read the persisted server-side outbound health monitor configuration.',
-        response: '{"enabled":false,"intervalSeconds":60,"failureThreshold":3,"testMode":"tcp"}',
+        summary:
+          'Read the persisted server-side outbound health monitor configuration.',
+        response:
+          '{"enabled":false,"intervalSeconds":60,"failureThreshold":3,"testMode":"tcp"}',
       },
       {
         method: 'POST',
         path: '/panel/api/xray/outbound-health/config',
         summary: 'Save the opt-in server-side outbound health monitor configuration.',
-        body: '{"enabled":true,"intervalSeconds":60,"failureThreshold":3,"testMode":"tcp"}',
-        response: '{"success":true,"obj":{"enabled":true,"intervalSeconds":60,"failureThreshold":3,"testMode":"tcp"}}',
+        body:
+          '{"enabled":true,"intervalSeconds":60,"failureThreshold":3,"testMode":"tcp"}',
+        response:
+          '{"success":true,"obj":{"enabled":true,"intervalSeconds":60,"failureThreshold":3,"testMode":"tcp"}}',
       },
       {
         method: 'GET',
         path: '/panel/api/xray/outbound-health/status',
-        summary: 'Read the last persisted server-side outbound health monitor status.',
-        response: '{"lastRun":"2026-10-16T00:00:00Z","healthy":{"proxy-a":true},"consecutiveFailures":{},"managedOverrides":{}}',
+        summary:
+          'Read the last persisted server-side outbound health monitor status.',
+        response:
+          '{"lastRun":"2026-10-16T00:00:00Z","healthy":{"proxy-a":true},"consecutiveFailures":{},"managedOverrides":{}}',
       },
       {
         method: 'GET',
