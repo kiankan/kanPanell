@@ -2256,8 +2256,7 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/xray/outbound-health/config',
-        summary:
-          'Read the persisted server-side outbound health monitor configuration.',
+        summary: 'Read the persisted server-side outbound health monitor configuration.',
         response:
           '{"enabled":false,"intervalSeconds":60,"failureThreshold":3,"testMode":"tcp"}',
       },
@@ -2273,8 +2272,7 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/xray/outbound-health/status',
-        summary:
-          'Read the last persisted server-side outbound health monitor status.',
+        summary: 'Read the last persisted server-side outbound health monitor status.',
         response:
           '{"lastRun":"2026-10-16T00:00:00Z","healthy":{"proxy-a":true},"consecutiveFailures":{},"managedOverrides":{}}',
       },
