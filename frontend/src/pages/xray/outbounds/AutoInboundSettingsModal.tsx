@@ -26,22 +26,29 @@ export default function AutoInboundSettingsModal({ open, onClose }: AutoInboundS
 
   useEffect(() => {
     if (!open) return;
-    HttpUtil.get<AutoInboundTLSConfig>('/panel/api/xray/auto-inbounds/config', undefined, { silent: true })
+    HttpUtil.get<AutoInboundTLSConfig>(
+      '/panel/api/xray/auto-inbounds/config',
+      undefined,
+      { silent: true },
+    )
       .then((r) => {
         if (r.success && r.obj) form.setFieldsValue(r.obj);
         else message.error(r.msg || 'Could not load Auto Inbound TLS settings.');
       })
       .catch(() => {
         message.error('Could not load Auto Inbound TLS settings.');
-      })
-      ;
+      });
   }, [open, form]);
 
   async function submit(values: AutoInboundTLSConfig) {
     setSaving(true);
     setResult('');
     try {
-      const r = await HttpUtil.post<AutoInboundTLSResult>('/panel/api/xray/auto-inbounds/reconcile', values, { silent: true });
+      const r = await HttpUtil.post<AutoInboundTLSResult>(
+        '/panel/api/xray/auto-inbounds/reconcile',
+        values,
+        { silent: true },
+      );
       if (!r?.success) {
         message.error(r?.msg || 'Auto Inbound setup failed. No new inbound was created.');
         return;
