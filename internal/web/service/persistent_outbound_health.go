@@ -185,6 +185,38 @@ func (s *XrayService) RunPersistentOutboundHealthMonitor() {
 		return
 	}
 
+	// Runtime Xray config includes enabled subscription outbounds that are
+	// deliberately not written into xrayTemplateConfig. Include them in the
+	// same order as GetXrayConfig so balancer selectors and dialerProxy probes
+	// see the actual candidate pool.
+	prepend, appendList, err := (&OutboundSubscriptionService{}).activeOutboundsSplit()
+	if err != nil {
+		state.Status.LastError = err.Error()
+		logger.Warning("outbound health monitor subscriptions: ", err)
+		return
+	}
+	mergedOutbounds := make([]json.RawMessage, 0, len(prepend)+len(doc.Outbounds)+len(appendList))
+	for _, item := range prepend {
+		encoded, marshalErr := json.Marshal(item)
+		if marshalErr != nil {
+			state.Status.LastError = marshalErr.Error()
+			logger.Warning("outbound health monitor subscription outbound: ", marshalErr)
+			return
+		}
+		mergedOutbounds = append(mergedOutbounds, encoded)
+	}
+	mergedOutbounds = append(mergedOutbounds, doc.Outbounds...)
+	for _, item := range appendList {
+		encoded, marshalErr := json.Marshal(item)
+		if marshalErr != nil {
+			state.Status.LastError = marshalErr.Error()
+			logger.Warning("outbound health monitor subscription outbound: ", marshalErr)
+			return
+		}
+		mergedOutbounds = append(mergedOutbounds, encoded)
+	}
+	doc.Outbounds = mergedOutbounds
+
 	testURL, _ := settings.GetXrayOutboundTestUrl()
 	if testURL == "" {
 		testURL = "https://www.google.com/generate_204"
