@@ -35,13 +35,17 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
   const inFlight = useRef(false);
   const checkOnceRef = useRef<() => Promise<void>>(async () => {});
   const settingsRef = useRef(settings);
-  settingsRef.current = settings;
+
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   const balancers = useMemo(
     () => (settings?.routing?.balancers || []).filter((b) => !!b?.tag),
     [settings?.routing?.balancers],
   );
-  const selectedBalancer = balancers.find((b) => b.tag === balancerTag);
+  const activeBalancerTag = balancerTag || balancers[0]?.tag;
+  const selectedBalancer = balancers.find((b) => b.tag === activeBalancerTag);
   const candidates = useMemo(() => {
     if (!selectedBalancer) return [];
     const selectors = selectedBalancer.selector || [];
@@ -54,14 +58,12 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
     });
   }, [selectedBalancer, settings?.outbounds]);
 
-  useEffect(() => {
-    if (open && !balancerTag && balancers.length) setBalancerTag(balancers[0].tag);
-    if (!open) {
-      setEnabled(false);
-      setResults([]);
-      setManagedOverride('');
-    }
-  }, [open, balancerTag, balancers]);
+  function handleClose() {
+    setEnabled(false);
+    setResults([]);
+    setManagedOverride('');
+    onClose();
+  }
 
   async function checkOnce() {
     if (inFlight.current || !selectedBalancer || candidates.length === 0) return;
@@ -156,7 +158,9 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
     }
   }
 
-  checkOnceRef.current = checkOnce;
+  useEffect(() => {
+    checkOnceRef.current = checkOnce;
+  }, [checkOnce]);
 
   useEffect(() => {
     if (!open || !enabled || !selectedBalancer || candidates.length === 0) return;
@@ -171,7 +175,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
       <Modal
         title="Outbound Health Check & Auto Failover"
         open={open}
-        onCancel={onClose}
+        onCancel={handleClose}
         onOk={() => void checkOnce()}
         okText="Check now"
         confirmLoading={checking}
@@ -191,7 +195,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
             <Typography.Text strong>Balancer</Typography.Text>
             <Select
               style={{ width: '100%', marginTop: 6 }}
-              value={balancerTag}
+              value={activeBalancerTag}
               onChange={(value) => {
                 setBalancerTag(value);
                 setResults([]);
