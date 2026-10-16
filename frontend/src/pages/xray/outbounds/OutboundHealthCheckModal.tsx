@@ -144,7 +144,8 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
           if (clearResponse?.success) {
             setManagedOverride('');
             messageApi.success(
-              `Balancer ${selectedBalancer.tag}: preferred member recovered; automatic override cleared.`,
+              `Balancer ${selectedBalancer.tag}: preferred member recovered; ` +
+              'automatic override cleared.',
             );
           }
         } else {
@@ -171,7 +172,8 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
           if (response?.success) {
             setManagedOverride(firstHealthy);
             messageApi.warning(
-              `Balancer ${selectedBalancer.tag}: failed member ${activeTag}; switched to ${firstHealthy}.`,
+              `Balancer ${selectedBalancer.tag}: failed member ${activeTag}; ` +
+              `switched to ${firstHealthy}.`,
             );
           } else {
             messageApi.error(
@@ -223,7 +225,11 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
           showIcon
           style={{ marginBottom: 16 }}
           message="Automatic checks run only while this dialog is open."
-          description="This monitor uses the existing Xray outbound probe and balancer override APIs. It will not change an override that appears to be manually managed, and it will never switch to a member if every probe fails."
+          description={
+            'This monitor uses the existing Xray outbound probe and balancer override APIs. ' +
+            'It will not change an override that appears to be manually managed, and it will ' +
+            'never switch to a member if every probe fails.'
+          }
         />
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <div>
