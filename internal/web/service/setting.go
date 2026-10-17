@@ -53,16 +53,18 @@ const (
 )
 
 var defaultValueMap = map[string]string{
-	"xrayTemplateConfig": xrayTemplateConfig,
-	"webListen":          "",
-	"webDomain":          "",
-	"webPort":            "2053",
-	"webCertFile":        "",
-	"webKeyFile":         "",
-	"autoTLS":            "{}",
-	"secret":             random.Seq(32),
-	"panelGuid":          uuid.NewString(),
-	"apiToken":           "",
+	"xrayTemplateConfig":          xrayTemplateConfig,
+	"outboundHealthMonitorConfig": "{\"enabled\":false,\"intervalSeconds\":60,\"failureThreshold\":3,\"testMode\":\"tcp\"}",
+	"outboundHealthMonitorState":  "{}",
+	"webListen":                   "",
+	"webDomain":                   "",
+	"webPort":                     "2053",
+	"webCertFile":                 "",
+	"webKeyFile":                  "",
+	"autoTLS":                     "{}",
+	"secret":                      random.Seq(32),
+	"panelGuid":                   uuid.NewString(),
+	"apiToken":                    "",
 	// Node mTLS material (opt-in). All default empty: the CA + master client
 	// cert are minted lazily on first use, and the node-side trust CA is pasted
 	// in by the operator. Kept out of entity.AllSetting so private keys never
