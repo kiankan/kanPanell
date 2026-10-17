@@ -808,3 +808,72 @@ func (t *Tgbot) exportClientsCSV(chatId int64) {
 		t.SendMsgToTgbot(chatId, t.I18nBot("tgbot.answers.errorOperation"))
 	}
 }
+
+// diagnoseClients sends a read-only snapshot of client health to an administrator.
+func (t *Tgbot) diagnoseClients(chatId int64) {
+	inbounds, err := t.inboundService.GetAllInbounds()
+	if err != nil {
+		logger.Warning("diagnoseClients GetAllInbounds failed:", err)
+		t.SendMsgToTgbot(chatId, t.I18nBot("tgbot.answers.getInboundsFailed"))
+		return
+	}
+
+	type clientState struct {
+		enabled bool
+		expiry  int64
+		used    int64
+		limit   int64
+	}
+	clients := make(map[string]clientState)
+	for _, inbound := range inbounds {
+		if inbound == nil {
+			continue
+		}
+		for _, client := range inbound.ClientStats {
+			if client.Email == "" {
+				continue
+			}
+			// Keep the first record for clients attached to multiple inbounds.
+			if _, exists := clients[client.Email]; exists {
+				continue
+			}
+			clients[client.Email] = clientState{
+				enabled: client.Enable,
+				expiry:  client.ExpiryTime,
+				used:    client.Up + client.Down,
+				limit:   client.Total,
+			}
+		}
+	}
+
+	var enabled, disabled, expired, exhausted int
+	now := time.Now().UnixMilli()
+	for _, client := range clients {
+		if client.enabled {
+			enabled++
+		} else {
+			disabled++
+		}
+		if client.expiry > 0 && client.expiry <= now {
+			expired++
+		}
+		if client.limit > 0 && client.used >= client.limit {
+			exhausted++
+		}
+	}
+
+	xrayState := "در حال اجرا"
+	if !t.xrayService.IsXrayRunning() {
+		xrayState = "متوقف"
+	}
+	botState := "فعال"
+	if !t.IsRunning() {
+		botState = "متوقف"
+	}
+
+	report := fmt.Sprintf(
+		"🩺 گزارش عیب‌یابی سنایی\n\nوضعیت ربات تلگرام: %s\nوضعیت Xray: %s\nورودی‌ها: %d\nکل کلاینت‌های یکتا: %d\nفعال: %d\nغیرفعال: %d\nمنقضی‌شده: %d\nتمام‌شده از نظر حجم: %d",
+		botState, xrayState, len(inbounds), len(clients), enabled, disabled, expired, exhausted,
+	)
+	t.SendMsgToTgbot(chatId, report)
+}
