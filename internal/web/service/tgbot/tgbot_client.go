@@ -734,7 +734,6 @@ func (t *Tgbot) addClient(chatId int64, draft *clientDraft, msg string, messageI
 	}
 }
 
-
 // exportClientsCSV exports the current client inventory as a CSV document.
 // Client traffic records are deduplicated by email because a client may be
 // attached to more than one inbound.
@@ -872,7 +871,7 @@ func (t *Tgbot) diagnoseClients(chatId int64) {
 	}
 
 	report := fmt.Sprintf(
-		"🩺 گزارش عیب‌یابی سنایی\n\nوضعیت ربات تلگرام: %s\nوضعیت Xray: %s\nورودی‌ها: %d\nکل کلاینت‌های یکتا: %d\nفعال: %d\nغیرفعال: %d\nمنقضی‌شده: %d\nتمام‌شده از نظر حجم: %d",
+		"🩺 گزارش عیب\u200cیابی سنایی\n\nوضعیت ربات تلگرام: %s\nوضعیت Xray: %s\nورودی\u200cها: %d\nکل کلاینت\u200cهای یکتا: %d\nفعال: %d\nغیرفعال: %d\nمنقضی\u200cشده: %d\nتمام\u200cشده از نظر حجم: %d",
 		botState, xrayState, len(inbounds), len(clients), enabled, disabled, expired, exhausted,
 	)
 	t.SendMsgToTgbot(chatId, report)
