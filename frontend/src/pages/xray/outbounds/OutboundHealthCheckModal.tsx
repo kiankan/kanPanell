@@ -80,16 +80,12 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
   useEffect(() => {
     if (!open) return;
     Promise.all([
-      HttpUtil.get<PersistentMonitorConfig>(
-        '/panel/api/xray/outbound-health/config',
-        undefined,
-        { silent: true },
-      ),
-      HttpUtil.get<PersistentMonitorStatus>(
-        '/panel/api/xray/outbound-health/status',
-        undefined,
-        { silent: true },
-      ),
+      HttpUtil.get<PersistentMonitorConfig>('/panel/api/xray/outbound-health/config', undefined, {
+        silent: true,
+      }),
+      HttpUtil.get<PersistentMonitorStatus>('/panel/api/xray/outbound-health/status', undefined, {
+        silent: true,
+      }),
     ])
       .then(([configResponse, statusResponse]) => {
         if (configResponse?.success && configResponse.obj) {
@@ -380,11 +376,7 @@ export default function OutboundHealthCheckModal({ open, settings, onClose }: Pr
               ]}
               style={{ minWidth: 130 }}
             />
-            <Button
-              type="primary"
-              loading={monitorSaving}
-              onClick={() => void saveMonitorConfig()}
-            >
+            <Button type="primary" loading={monitorSaving} onClick={() => void saveMonitorConfig()}>
               Save server settings
             </Button>
           </Space>
