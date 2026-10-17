@@ -132,3 +132,28 @@
 .hosts-page .ant-card .ant-card-actions {
   background: transparent;
 }
+
+
+/* Dark Pro: restrained borders and predictable, low-motion hover feedback. */
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) .ant-card {
+  border-color: #2b2f39;
+  background: #1d2027;
+  box-shadow: none;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) .ant-card.ant-card-hoverable:hover {
+  border-color: #42495b;
+  background: #20242c;
+  box-shadow: none;
+}
+
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) .ant-card-head {
+  border-bottom-color: #2b2f39;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.dark .ant-card {
+    transition: none !important;
+  }
+}
