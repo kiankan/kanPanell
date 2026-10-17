@@ -485,3 +485,60 @@
 .index-page .ip-hidden {
   filter: blur(6px);
 }
+
+
+/* Dark Pro dashboard refinements. Existing data and actions are unchanged. */
+.index-page:not(.is-ultra) {
+  --ov-gap: 14px;
+  --ov-pad: 20px;
+}
+
+.index-page:not(.is-ultra) .ov-page {
+  gap: var(--ov-gap);
+}
+
+.index-page:not(.is-ultra) .ov-tile-number {
+  font-size: 32px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+.index-page:not(.is-ultra) .ov-tile-head {
+  padding-top: 16px;
+}
+
+.index-page:not(.is-ultra) .ov-tile-chart {
+  margin-top: 8px;
+}
+
+.index-page:not(.is-ultra) .ov-state {
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ant-color-bg-container) 78%, transparent);
+  padding: 6px 10px;
+}
+
+.index-page:not(.is-ultra) .ov-bar-actions {
+  gap: 6px;
+}
+
+.index-page:not(.is-ultra) .ant-btn {
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .index-page:not(.is-ultra) {
+    --ov-gap: 10px;
+    --ov-pad: 14px;
+  }
+
+  .index-page:not(.is-ultra) .ov-tile-number {
+    font-size: 29px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .index-page .ov-state-dot::after {
+    animation: none !important;
+  }
+}
