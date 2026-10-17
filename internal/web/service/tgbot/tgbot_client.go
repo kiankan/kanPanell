@@ -748,7 +748,7 @@ func (t *Tgbot) exportClientsCSV(chatId int64) {
 
 	var data strings.Builder
 	// A BOM helps spreadsheet applications recognize UTF-8 reliably.
-	data.WriteString("\\uFEFF")
+	data.WriteString("\uFEFF")
 	writer := csv.NewWriter(&data)
 	if err := writer.Write([]string{"email", "enabled", "inbound_id", "upload_bytes", "download_bytes", "used_bytes", "limit_bytes", "expires_at", "reset"}); err != nil {
 		t.SendMsgToTgbot(chatId, t.I18nBot("tgbot.answers.errorOperation"))
