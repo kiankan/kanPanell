@@ -46,6 +46,7 @@ import TextModal from '@/components/feedback/TextModal';
 
 import OutboundFormModal from './OutboundFormModal';
 import AutoInboundSettingsModal from './AutoInboundSettingsModal';
+import OutboundHealthCheckModal from './OutboundHealthCheckModal';
 import { propagateOutboundTagRename } from '../basics/helpers';
 import { planOutboundDeletion, applyOutboundDeletion } from '../reference-cleanup';
 import DeletionImpactList from '../DeletionImpactList';
@@ -131,6 +132,7 @@ export default function OutboundsTab({
   const [testMode, setTestMode] = useState<OutboundTestMode>('tcp');
   const [modalOpen, setModalOpen] = useState(false);
   const [autoInboundOpen, setAutoInboundOpen] = useState(false);
+  const [healthCheckOpen, setHealthCheckOpen] = useState(false);
   const [editingOutbound, setEditingOutbound] = useState<Record<string, unknown> | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [existingTags, setExistingTags] = useState<string[]>([]);
@@ -616,6 +618,9 @@ export default function OutboundsTab({
               <Button icon={<SettingOutlined />} onClick={() => setAutoInboundOpen(true)}>
                 Auto Inbound
               </Button>
+              <Button icon={<CheckCircleOutlined />} onClick={() => setHealthCheckOpen(true)}>
+                Health Check
+              </Button>
               <Dropdown
                 trigger={['click']}
                 menu={{
@@ -731,6 +736,11 @@ export default function OutboundsTab({
         <AutoInboundSettingsModal
           open={autoInboundOpen}
           onClose={() => setAutoInboundOpen(false)}
+        />
+        <OutboundHealthCheckModal
+          open={healthCheckOpen}
+          settings={templateSettings}
+          onClose={() => setHealthCheckOpen(false)}
         />
         <PromptModal
           open={importOpen}
