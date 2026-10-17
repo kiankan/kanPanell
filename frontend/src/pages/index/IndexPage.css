@@ -486,7 +486,6 @@
   filter: blur(6px);
 }
 
-
 /* Dark Pro dashboard refinements. Existing data and actions are unchanged. */
 .index-page:not(.is-ultra) {
   --ov-gap: 14px;
