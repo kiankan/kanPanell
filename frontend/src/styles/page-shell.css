@@ -22,8 +22,8 @@
 .groups-page.is-dark,
 .api-docs-page.is-dark,
 .sponsors-page.is-dark {
-  --bg-page: #1a1b1f;
-  --bg-card: #23252b;
+  --bg-page: #15171c;
+  --bg-card: #1d2027;
 }
 
 .index-page.is-dark.is-ultra,
@@ -200,8 +200,8 @@ body.dark .ant-dropdown-menu-item-divider {
 }
 
 .hosts-page.is-dark {
-  --bg-page: #1a1b1f;
-  --bg-card: #23252b;
+  --bg-page: #15171c;
+  --bg-card: #1d2027;
 }
 
 .hosts-page.is-dark.is-ultra {
@@ -227,5 +227,57 @@ body.dark .ant-dropdown-menu-item-divider {
   .hosts-page .content-area,
   .hosts-page .summary-card {
     padding: 8px;
+  }
+}
+
+
+/* Dark Pro shared page shell. Keep Ultra Dark as a separate user-selected theme. */
+body.dark {
+  --xui-surface-page: #15171c;
+  --xui-surface-sidebar: #111318;
+  --xui-surface-card: #1d2027;
+  --xui-surface-raised: #252a34;
+  --xui-border-subtle: #2b2f39;
+  --xui-border-strong: #343844;
+  --xui-accent: #8795ff;
+}
+
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) {
+  --bg-page: var(--xui-surface-page);
+  --bg-card: var(--xui-surface-card);
+}
+
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) .content-area {
+  color: var(--ant-color-text);
+}
+
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) :is(.ant-table, .ant-table-container, .ant-table-content, .ant-table-body) {
+  background: transparent;
+}
+
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) .ant-table-thead > tr > th {
+  background: #191c23;
+  border-bottom-color: var(--xui-border-strong);
+}
+
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) .ant-table-tbody > tr > td {
+  border-bottom-color: var(--xui-border-subtle);
+}
+
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) .ant-table-tbody > tr:hover > td {
+  background: color-mix(in srgb, var(--xui-accent) 7%, var(--xui-surface-card));
+}
+
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) :is(.ant-input, .ant-input-affix-wrapper, .ant-select-selector, .ant-picker, .ant-input-number) {
+  border-color: var(--xui-border-strong);
+}
+
+body.dark :is(.index-page, .clients-page, .inbounds-page, .xray-page, .settings-page, .nodes-page, .groups-page, .api-docs-page, .sponsors-page, .hosts-page):not(.is-ultra) :is(.ant-input, .ant-input-affix-wrapper, .ant-select-selector, .ant-picker, .ant-input-number):hover {
+  border-color: var(--xui-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.dark * {
+    scroll-behavior: auto !important;
   }
 }
