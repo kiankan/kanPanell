@@ -388,6 +388,8 @@ func (t *Tgbot) trySetBotCommands(bot *telego.Bot) {
 			{Command: "restart", Description: t.I18nBot("tgbot.commands.restartDesc")},
 			{Command: "update", Description: t.I18nBot("tgbot.commands.updateDesc")},
 			{Command: "clearall", Description: t.I18nBot("tgbot.commands.clearallDesc")},
+			{Command: "diagnose", Description: "Client and service diagnostics"},
+			{Command: "export", Description: "Export client inventory as CSV"},
 			{Command: "export", Description: "Export client inventory as CSV"},
 			{Command: "broadcast", Description: t.I18nBot("tgbot.commands.broadcastDesc")},
 		},
