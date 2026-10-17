@@ -17,3 +17,16 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "weekly"
+    # Packages that peer-depend on each other's exact version must be bumped
+    # together, otherwise the individual PR fails `npm ci` with a peer
+    # conflict (e.g. @storybook/react-vite@10.6.2 needs storybook ^10.6.2).
+    groups:
+      storybook:
+        patterns:
+          - "storybook"
+          - "@storybook/*"
+          - "eslint-plugin-storybook"
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
