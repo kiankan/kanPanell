@@ -320,6 +320,13 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 		} else {
 			handleUnknownCommand()
 		}
+	case "export":
+		onlyMessage = true
+		if isAdmin {
+			t.exportClientsCSV(chatId)
+		} else {
+			handleUnknownCommand()
+		}
 	case "broadcast":
 		onlyMessage = true
 		if isAdmin {
