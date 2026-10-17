@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -730,5 +731,80 @@ func (t *Tgbot) addClient(chatId int64, draft *clientDraft, msg string, messageI
 		t.editMessageTgBot(chatId, messageID[0], msg, inlineKeyboard)
 	} else {
 		t.SendMsgToTgbot(chatId, msg, inlineKeyboard)
+	}
+}
+
+
+// exportClientsCSV exports the current client inventory as a CSV document.
+// Client traffic records are deduplicated by email because a client may be
+// attached to more than one inbound.
+func (t *Tgbot) exportClientsCSV(chatId int64) {
+	inbounds, err := t.inboundService.GetAllInbounds()
+	if err != nil {
+		logger.Warning("exportClientsCSV GetAllInbounds failed:", err)
+		t.SendMsgToTgbot(chatId, t.I18nBot("tgbot.answers.getInboundsFailed"))
+		return
+	}
+
+	var data strings.Builder
+	// A BOM helps spreadsheet applications recognize UTF-8 reliably.
+	data.WriteString("\\uFEFF")
+	writer := csv.NewWriter(&data)
+	if err := writer.Write([]string{"email", "enabled", "inbound_id", "upload_bytes", "download_bytes", "used_bytes", "limit_bytes", "expires_at", "reset"}); err != nil {
+		t.SendMsgToTgbot(chatId, t.I18nBot("tgbot.answers.errorOperation"))
+		return
+	}
+
+	seen := make(map[string]struct{})
+	for _, inbound := range inbounds {
+		if inbound == nil {
+			continue
+		}
+		for _, client := range inbound.ClientStats {
+			if client.Email == "" {
+				continue
+			}
+			if _, ok := seen[client.Email]; ok {
+				continue
+			}
+			seen[client.Email] = struct{}{}
+
+			expiry := "unlimited"
+			if client.ExpiryTime > 0 {
+				expiry = time.UnixMilli(client.ExpiryTime).Format(time.RFC3339)
+			} else if client.ExpiryTime < 0 {
+				expiry = strconv.FormatInt(client.ExpiryTime, 10)
+			}
+			if err := writer.Write([]string{
+				client.Email,
+				strconv.FormatBool(client.Enable),
+				strconv.Itoa(client.InboundId),
+				strconv.FormatInt(client.Up, 10),
+				strconv.FormatInt(client.Down, 10),
+				strconv.FormatInt(client.Up+client.Down, 10),
+				strconv.FormatInt(client.Total, 10),
+				expiry,
+				strconv.Itoa(client.Reset),
+			}); err != nil {
+				logger.Warning("exportClientsCSV write row failed:", err)
+				t.SendMsgToTgbot(chatId, t.I18nBot("tgbot.answers.errorOperation"))
+				return
+			}
+		}
+	}
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		logger.Warning("exportClientsCSV flush failed:", err)
+		t.SendMsgToTgbot(chatId, t.I18nBot("tgbot.answers.errorOperation"))
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	filename := "clients-" + time.Now().Format("20060102-150405") + ".csv"
+	document := tu.Document(tu.ID(chatId), tu.FileFromBytes([]byte(data.String()), filename))
+	if _, err := bot.SendDocument(ctx, document); err != nil {
+		logger.Warning("exportClientsCSV Telegram upload failed:", err)
+		t.SendMsgToTgbot(chatId, t.I18nBot("tgbot.answers.errorOperation"))
 	}
 }
