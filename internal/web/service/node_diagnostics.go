@@ -14,7 +14,7 @@ type NodeDiagnosticFinding struct {
 	Code	string	`json:"code"`
 	Severity	string	`json:"severity"`
 	Message	string	`json:"message"`
-	Recommendation string   `json:"recommendation"`
+	Recommendation	string	`json:"recommendation"`
 }
 
 type NodeDiagnosis struct {
@@ -24,22 +24,22 @@ type NodeDiagnosis struct {
 	LatencyMs	int	`json:"latencyMs"`
 	XrayState	string	`json:"xrayState"`
 	XrayError	string	`json:"xrayError"`
-	LocalInboundCount int64                   `json:"localInboundCount"`
-	RemoteInboundCount int                   `json:"remoteInboundCount"`
+	LocalInboundCount	int64	`json:"localInboundCount"`
+	RemoteInboundCount	int	`json:"remoteInboundCount"`
 	SyncPending	bool	`json:"syncPending"`
 	RepairAvailable	bool	`json:"repairAvailable"`
 	Summary	string	`json:"summary"`
-	Findings	[]NodeDiagnosticFinding `json:"findings"`
+	Findings	[]NodeDiagnosticFinding	`json:"findings"`
 	RepairPlan	[]string	`json:"repairPlan"`
 	AIEnabled	bool	`json:"aiEnabled"`
 	AIExplanation	string	`json:"aiExplanation,omitempty"`
-	AIRecommendations []string                `json:"aiRecommendations,omitempty"`
+	AIRecommendations	[]string	`json:"aiRecommendations,omitempty"`
 }
 
 type NodeRepairResult struct {
 	NodeID	int	`json:"nodeId"`
 	Queued	bool	`json:"queued"`
-	Message string `json:"message"`
+	Message	string	`json:"message"`
 }
 
 // DiagnoseNode collects bounded, read-only evidence from the panel and node API.
