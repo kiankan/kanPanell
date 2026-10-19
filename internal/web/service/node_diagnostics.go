@@ -54,7 +54,7 @@ func BuildNodeDiagnosticReport(node *model.Node, patch HeartbeatPatch, probeErr 
 		XrayState:     strings.ToLower(strings.TrimSpace(patch.XrayState)),
 		XrayError:     strings.TrimSpace(patch.XrayError),
 		InboundCount:  inboundCount,
-		InboundStatus: "ok",
+		InboundStatus: "not_checked",
 		Findings:      make([]NodeDiagnosticFinding, 0, 3),
 		RepairActions: make([]NodeRepairAction, 0, 1),
 	}
@@ -62,8 +62,10 @@ func BuildNodeDiagnosticReport(node *model.Node, patch HeartbeatPatch, probeErr 
 		report.NodeID = node.Id
 		report.NodeName = node.Name
 	}
-	if inboundErr != nil {
+	if probeErr == nil && inboundErr != nil {
 		report.InboundStatus = "unavailable"
+	} else if probeErr == nil {
+		report.InboundStatus = "ok"
 	}
 	if probeErr != nil || report.Status != "online" {
 		detail := "The node panel API could not be reached."
