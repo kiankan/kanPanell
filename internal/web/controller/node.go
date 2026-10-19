@@ -40,6 +40,9 @@ func (a *NodeController) initRouter(g *gin.RouterGroup) {
 	g.POST("/certFingerprint", a.certFingerprint)
 	g.POST("/inbounds", a.inbounds)
 	g.POST("/probe/:id", a.probe)
+
+	g.POST("/diagnose/:id", a.diagnose)
+	g.POST("/repair/:id", a.repair)
 	g.POST("/updatePanel", a.updatePanel)
 	g.GET("/history/:id/:metric/:bucket", a.history)
 	g.POST("/mtls/ca", a.mtlsCa)
@@ -366,4 +369,52 @@ func (a *NodeController) history(c *gin.Context) {
 		return
 	}
 	jsonObj(c, a.nodeService.AggregateNodeMetric(id, metric, bucket, 60), nil)
+}
+
+
+// diagnose returns a read-only snapshot and a bounded, API-only repair plan.
+// The plan never executes automatically; the caller must explicitly confirm it.
+func (a *NodeController) diagnose(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		jsonMsg(c, I18nWeb(c, "get"), fmt.Errorf("invalid node id"))
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 12*time.Second)
+	defer cancel()
+	result, err := a.nodeService.DiagnoseNode(ctx, id)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.test"), err)
+		return
+	}
+	jsonObj(c, result, nil)
+}
+
+// repair only queues reconciliation of panel-managed inbound configuration.
+// It requires an explicit confirmation and never executes LLM-generated commands.
+func (a *NodeController) repair(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		jsonMsg(c, I18nWeb(c, "get"), fmt.Errorf("invalid node id"))
+		return
+	}
+	var req struct {
+		Confirm bool `json:"confirm" form:"confirm"`
+	}
+	if err := c.ShouldBind(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.test"), err)
+		return
+	}
+	if !req.Confirm {
+		jsonMsg(c, "Explicit confirmation is required before repair", fmt.Errorf("repair not confirmed"))
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 12*time.Second)
+	defer cancel()
+	result, err := a.nodeService.RepairNodeInboundSync(ctx, id)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.test"), err)
+		return
+	}
+	jsonObj(c, result, nil)
 }
