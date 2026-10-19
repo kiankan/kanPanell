@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
   Alert,
@@ -34,6 +33,7 @@ const { Title, Paragraph, Text } = Typography;
 type NodeRecord = {
   id: number;
   name?: string;
+  remark?: string;
   address?: string;
   enable?: boolean;
   status?: string;
@@ -92,11 +92,10 @@ function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'o
   evidence.push(`نود: ${node.name || node.remark || 'Node'} (#${node.id})`);
   evidence.push(`آدرس گزارش‌شده: ${node.address || 'ثبت نشده'}`);
   evidence.push(`وضعیت Xray در پنل: ${node.xrayState || 'نامشخص'}`);
-  return { nodeId: node.id, nodeName: node.name, severity, findings, plan, evidence };
+  return { nodeId: node.id, nodeName: node.name || node.remark || `Node #${node.id}`, severity, findings, plan, evidence };
 }
 
 export default function AIAssistantPage() {
-  const { t } = useTranslation();
   const { isDark, isUltra } = useTheme();
   const [selectedNodeId, setSelectedNodeId] = useState<number | undefined>();
   const [question, setQuestion] = useState('');
@@ -109,7 +108,8 @@ export default function AIAssistantPage() {
     queryKey: ['ai-assistant', 'nodes'],
     queryFn: async () => {
       const response = await HttpUtil.get<ApiMessage<NodeRecord[]>>('/panel/api/nodes/list', undefined, { silent: true });
-      if (!response?.success || !Array.isArray(response.obj)) return [];
+      if (!response?.success) throw new Error(response?.msg || 'Failed to fetch nodes');
+      if (!Array.isArray(response.obj)) throw new Error('Invalid nodes response');
       return response.obj;
     },
     staleTime: 30_000,
