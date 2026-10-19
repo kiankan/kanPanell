@@ -238,9 +238,7 @@ export default function NodeDiagnosticsModal({
                     `${t('pages.nodes.diagnostics.before')}: ${repairResult.before || '-'}`,
                     `${t('pages.nodes.diagnostics.after')}: ${repairResult.after || '-'}`,
                     repairResult.error || '',
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
+                  ].filter(Boolean).join(' · ')}
                   style={{ marginTop: 12 }}
                 />
               )}
