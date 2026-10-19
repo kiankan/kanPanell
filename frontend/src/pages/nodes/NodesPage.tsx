@@ -388,6 +388,7 @@ export default function NodesPage() {
         />
 
         <NodeDiagnosticsModal
+          key={diagnosticNode?.id ?? 'none'}
           open={!!diagnosticNode}
           node={diagnosticNode}
           onClose={() => setDiagnosticNode(null)}
