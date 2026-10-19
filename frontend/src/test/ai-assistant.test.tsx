@@ -97,3 +97,27 @@ test('flags a negated Xray state instead of treating the word running as healthy
   expect(await screen.findByText('وضعیت Xray نیازمند بررسی است: not running')).toBeTruthy();
   expect(screen.getByText('ERROR')).toBeTruthy();
 });
+
+
+test('warns when a successful probe omits the Xray state', async () => {
+  getMock.mockResolvedValue({
+    success: true,
+    obj: [{ id: 7, name: 'node-7', enable: true }],
+  });
+  postMock.mockResolvedValue({
+    success: true,
+    obj: { status: 'online', latencyMs: 21 },
+  });
+
+  renderWithProviders(
+    <MemoryRouter>
+      <AIAssistantPage />
+    </MemoryRouter>,
+  );
+
+  fireEvent.mouseDown(screen.getByRole('combobox'));
+  fireEvent.click(await screen.findByText('node-7 (#7)'));
+  fireEvent.click(screen.getByRole('button', { name: 'اجرای بررسی از طریق API' }));
+
+  expect(await screen.findByText('وضعیت Xray در پاسخ Probe مشخص نیست.')).toBeTruthy();
+});
