@@ -1,8 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, Descriptions, Divider, List, Modal, Space, Spin, Tag, Typography } from 'antd';
+import {
+  Alert,
+  Button,
+  Descriptions,
+  Divider,
+  List,
+  Modal,
+  Space,
+  Spin,
+  Tag,
+  Typography,
+} from 'antd';
 import { ReloadOutlined, ToolOutlined } from '@ant-design/icons';
 
+import { keys } from '@/api/queryKeys';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import { HttpUtil } from '@/utils';
 
@@ -57,64 +70,57 @@ export default function NodeDiagnosticsModal({
   onRepaired,
 }: NodeDiagnosticsModalProps) {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(false);
-  const [repairing, setRepairing] = useState(false);
+  const queryClient = useQueryClient();
   const [confirmAction, setConfirmAction] = useState<RepairAction | null>(null);
-  const [report, setReport] = useState<DiagnosticReport | null>(null);
   const [repairResult, setRepairResult] = useState<RepairResult | null>(null);
-  const [error, setError] = useState('');
 
-  const diagnose = useCallback(async (clearPreviousRepair = true) => {
-    if (!node?.id) return;
-    setReport(null);
-    setConfirmAction(null);
-    setLoading(true);
-    setError('');
-    if (clearPreviousRepair) setRepairResult(null);
-    try {
+  const {
+    data: report,
+    isFetching: loading,
+    error: diagnosticError,
+    refetch: diagnose,
+  } = useQuery({
+    queryKey: ['nodes', 'diagnostics', node?.id],
+    enabled: open && !!node?.id,
+    retry: false,
+    queryFn: async () => {
+      if (!node?.id) throw new Error(t('pages.nodes.diagnostics.failed'));
       const response = await HttpUtil.post<DiagnosticReport>(
         `/panel/api/nodes/diagnose/${node.id}`,
       );
       if (!response?.success || !response.obj) {
-        setError(response?.msg || t('pages.nodes.diagnostics.failed'));
-        return;
+        throw new Error(response?.msg || t('pages.nodes.diagnostics.failed'));
       }
-      setReport(response.obj);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t('pages.nodes.diagnostics.failed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [node, t]);
+      return response.obj;
+    },
+  });
 
-  useEffect(() => {
-    if (!open || !node?.id) return;
-    void diagnose();
-  }, [open, node, diagnose]);
-
-  const applyRepair = useCallback(async () => {
-    if (!node?.id || !confirmAction) return;
-    setRepairing(true);
-    setError('');
-    try {
+  const repairMutation = useMutation({
+    mutationFn: async () => {
+      if (!node?.id || !confirmAction) {
+        throw new Error(t('pages.nodes.diagnostics.repairFailed'));
+      }
       const response = await HttpUtil.post<RepairResult>(
         `/panel/api/nodes/repair/${node.id}`,
         { actionId: confirmAction.id },
       );
       if (!response?.success || !response.obj) {
-        setError(response?.msg || t('pages.nodes.diagnostics.repairFailed'));
-        return;
+        throw new Error(response?.msg || t('pages.nodes.diagnostics.repairFailed'));
       }
-      setRepairResult(response.obj);
+      return response.obj;
+    },
+    onSuccess: async (result) => {
+      setRepairResult(result);
       setConfirmAction(null);
-      await diagnose(false);
+      await queryClient.invalidateQueries({ queryKey: ['nodes', 'diagnostics', node?.id] });
+      await queryClient.invalidateQueries({ queryKey: keys.nodes.root() });
       onRepaired();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t('pages.nodes.diagnostics.repairFailed'));
-    } finally {
-      setRepairing(false);
-    }
-  }, [node, confirmAction, diagnose, onRepaired, t]);
+    },
+  });
+
+  const errorMessage =
+    (diagnosticError instanceof Error ? diagnosticError.message : '') ||
+    (repairMutation.error instanceof Error ? repairMutation.error.message : '');
 
   return (
     <>
@@ -125,7 +131,14 @@ export default function NodeDiagnosticsModal({
         footer={
           <Space>
             <Button onClick={onClose}>{t('close')}</Button>
-            <Button icon={<ReloadOutlined />} onClick={() => void diagnose()} loading={loading}>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                setRepairResult(null);
+                void diagnose();
+              }}
+              loading={loading}
+            >
               {t('pages.nodes.diagnostics.runAgain')}
             </Button>
           </Space>
@@ -136,7 +149,9 @@ export default function NodeDiagnosticsModal({
         <Typography.Paragraph type="secondary">
           {t('pages.nodes.diagnostics.intro')}
         </Typography.Paragraph>
-        {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />}
+        {errorMessage && (
+          <Alert type="error" showIcon message={errorMessage} style={{ marginBottom: 16 }} />
+        )}
         <Spin spinning={loading}>
           {report && (
             <>
@@ -165,7 +180,15 @@ export default function NodeDiagnosticsModal({
                   <List.Item>
                     <Space direction="vertical" size={4} style={{ width: '100%' }}>
                       <Space wrap>
-                        <Tag color={finding.severity === 'error' ? 'error' : finding.severity === 'warning' ? 'warning' : 'blue'}>
+                        <Tag
+                          color={
+                            finding.severity === 'error'
+                              ? 'error'
+                              : finding.severity === 'warning'
+                                ? 'warning'
+                                : 'blue'
+                          }
+                        >
                           {t(`pages.nodes.diagnostics.severity.${finding.severity}`)}
                         </Tag>
                         <Typography.Text strong>{finding.title}</Typography.Text>
@@ -195,7 +218,7 @@ export default function NodeDiagnosticsModal({
                             type="primary"
                             danger
                             onClick={() => setConfirmAction(action)}
-                            disabled={repairing}
+                            disabled={repairMutation.isPending}
                           >
                             {t('pages.nodes.diagnostics.reviewAndApply')}
                           </Button>
@@ -215,7 +238,9 @@ export default function NodeDiagnosticsModal({
                     `${t('pages.nodes.diagnostics.before')}: ${repairResult.before || '-'}`,
                     `${t('pages.nodes.diagnostics.after')}: ${repairResult.after || '-'}`,
                     repairResult.error || '',
-                  ].filter(Boolean).join(' · ')}
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                   style={{ marginTop: 12 }}
                 />
               )}
@@ -228,11 +253,11 @@ export default function NodeDiagnosticsModal({
         title={t('pages.nodes.diagnostics.confirmTitle')}
         okText={t('pages.nodes.diagnostics.confirmRepair')}
         cancelText={t('cancel')}
-        okButtonProps={{ danger: true, loading: repairing }}
+        okButtonProps={{ danger: true, loading: repairMutation.isPending }}
         onCancel={() => {
-          if (!repairing) setConfirmAction(null);
+          if (!repairMutation.isPending) setConfirmAction(null);
         }}
-        onOk={() => void applyRepair()}
+        onOk={() => repairMutation.mutate()}
         destroyOnHidden
       >
         <Alert
