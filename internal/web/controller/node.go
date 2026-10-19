@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
@@ -40,6 +41,8 @@ func (a *NodeController) initRouter(g *gin.RouterGroup) {
 	g.POST("/certFingerprint", a.certFingerprint)
 	g.POST("/inbounds", a.inbounds)
 	g.POST("/probe/:id", a.probe)
+	g.POST("/diagnose/:id", a.diagnose)
+	g.POST("/repair/:id", a.repair)
 	g.POST("/updatePanel", a.updatePanel)
 	g.GET("/history/:id/:metric/:bucket", a.history)
 	g.POST("/mtls/ca", a.mtlsCa)
@@ -330,6 +333,126 @@ func (a *NodeController) probe(c *gin.Context) {
 		return
 	}
 	jsonObj(c, patch.ToUI(probeErr == nil), nil)
+}
+
+// diagnose performs a fresh, read-only check of the remote panel and inbound API.
+func (a *NodeController) diagnose(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		jsonMsg(c, I18nWeb(c, "get"), fmt.Errorf("invalid node id"))
+		return
+	}
+	n, err := a.nodeService.GetById(id)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.obtain"), err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 8*time.Second)
+	defer cancel()
+	patch, probeErr := a.nodeService.Probe(ctx, n)
+	if probeErr != nil {
+		patch.Status = "offline"
+	} else {
+		patch.Status = "online"
+	}
+	if err := a.nodeService.UpdateHeartbeat(id, patch); err != nil {
+		logger.Warning("node diagnostic heartbeat update failed:", err)
+	}
+
+	inboundCount := 0
+	var inboundErr error
+	if probeErr == nil {
+		inboundCtx, inboundCancel := context.WithTimeout(c.Request.Context(), 8*time.Second)
+		defer inboundCancel()
+		var options []runtime.RemoteInboundOption
+		options, inboundErr = a.nodeService.GetRemoteInboundOptions(inboundCtx, n)
+		inboundCount = len(options)
+	}
+	report := service.BuildNodeDiagnosticReport(n, patch, probeErr, inboundCount, inboundErr)
+	jsonObj(c, report, nil)
+}
+
+type nodeRepairRequest struct {
+	ActionID string `json:"actionId" binding:"required"`
+}
+
+type nodeRepairExecution struct {
+	ActionID string `json:"actionId"`
+	Accepted bool   `json:"accepted"`
+	Verified bool   `json:"verified"`
+	Message  string `json:"message"`
+	Before   string `json:"before"`
+	After    string `json:"after,omitempty"`
+	Error    string `json:"error,omitempty"`
+}
+
+// repair accepts only a small allowlist of actions and re-checks the live
+// node state before changing anything. The frontend must show the plan and
+// obtain an explicit confirmation before submitting this request.
+func (a *NodeController) repair(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		jsonMsg(c, I18nWeb(c, "get"), fmt.Errorf("invalid node id"))
+		return
+	}
+	var req nodeRepairRequest
+	if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.ActionID) == "" {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), fmt.Errorf("repair action is required"))
+		return
+	}
+	if req.ActionID != "restart_xray" {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), fmt.Errorf("unsupported repair action"))
+		return
+	}
+	n, err := a.nodeService.GetById(id)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.obtain"), err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 12*time.Second)
+	defer cancel()
+	before, probeErr := a.nodeService.Probe(ctx, n)
+	if probeErr != nil {
+		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.probeFailed"), fmt.Errorf("repair cancelled: node panel API is unreachable: %w", probeErr))
+		return
+	}
+	state := strings.ToLower(strings.TrimSpace(before.XrayState))
+	if state != "error" && state != "stop" && state != "stopped" {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), fmt.Errorf("repair cancelled: Xray is not in a verified error or stopped state (current state: %q)", state))
+		return
+	}
+
+	if err := a.nodeService.RestartRemoteXray(ctx, id); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), fmt.Errorf("remote Xray restart request failed: %w", err))
+		return
+	}
+	result := nodeRepairExecution{
+		ActionID: req.ActionID, Accepted: true, Before: state,
+		Message: "Restart request accepted. Verifying the node status.",
+	}
+	time.Sleep(1200 * time.Millisecond)
+	after, afterErr := a.nodeService.Probe(ctx, n)
+	if afterErr != nil {
+		result.Error = afterErr.Error()
+		result.Message = "Restart was requested, but the node could not be verified afterwards. Re-run diagnosis before further changes."
+		jsonObj(c, result, nil)
+		return
+	}
+	result.After = strings.ToLower(strings.TrimSpace(after.XrayState))
+	result.Verified = result.After != "error" && result.After != "stop" && result.After != "stopped" && result.After != ""
+	if result.Verified {
+		result.Message = "Xray responded after the restart request."
+	} else {
+		result.Message = "The restart request was accepted, but Xray still reports a problem. Review the node's Xray logs; no further changes were made."
+		result.Error = strings.TrimSpace(after.XrayError)
+	}
+	after.Status = "online"
+	if updateErr := a.nodeService.UpdateHeartbeat(id, after); updateErr != nil {
+		logger.Warning("node repair heartbeat update failed:", updateErr)
+	}
+	jsonObj(c, result, nil)
 }
 
 func (a *NodeController) updatePanel(c *gin.Context) {
