@@ -27,6 +27,7 @@ import {
 import { HttpUtil } from '@/utils';
 import AppSidebar from '@/layouts/AppSidebar';
 import { useTheme } from '@/hooks/useTheme';
+import './AIAssistantPage.css';
 
 const { Title, Paragraph, Text } = Typography;
 
