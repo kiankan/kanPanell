@@ -11766,6 +11766,128 @@
         }
       }
     },
+    "/panel/api/nodes/diagnose/{id}": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Run live, read-only node panel API, Xray health, and inbound-list checks. Returns findings and a proposed allowlisted repair plan; does not change remote configuration.",
+        "operationId": "post_panel_api_nodes_diagnose_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Node ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "nodeId": 1,
+                    "status": "online",
+                    "xrayState": "stop",
+                    "inboundCount": 0,
+                    "findings": [],
+                    "repairActions": [
+                      {
+                        "id": "restart_xray",
+                        "label": "Start Xray again"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/nodes/repair/{id}": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Execute an explicitly confirmed allowlisted node repair. Currently only restarts Xray when a fresh probe verifies the node is reachable and Xray is stopped or in error; the result includes post-action verification.",
+        "operationId": "post_panel_api_nodes_repair_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Node ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "actionId": "restart_xray"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "actionId": "restart_xray",
+                    "accepted": true,
+                    "verified": true,
+                    "before": "stop",
+                    "after": "running",
+                    "message": "Xray responded after the restart request."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/nodes/updatePanel": {
       "post": {
         "tags": [
