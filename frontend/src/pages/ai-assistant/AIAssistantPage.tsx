@@ -85,11 +85,19 @@ function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'o
     findings.push('API پنل نود قابل دسترسی است.');
     evidence.push(`زمان پاسخ API: ${typeof probe.latencyMs === 'number' ? probe.latencyMs + ' ms' : 'نامشخص'}`);
   }
-  if (probe?.xrayState && !/running|online|started/i.test(probe.xrayState)) {
-    findings.push(`وضعیت Xray نیازمند بررسی است: ${probe.xrayState}`);
-    if (probe.xrayError) findings.push(`خطای گزارش‌شده: ${probe.xrayError}`);
-    plan.push('گزارش سرویس Xray و اعتبار پیکربندی را از API مجاز جمع‌آوری و پیش‌نمایش تعمیر تهیه کنید.');
-    severity = 'error';
+  if (probe?.xrayState?.trim()) {
+    const xrayState = probe.xrayState.trim().toLowerCase();
+    const healthyXrayStates = new Set(['running', 'online', 'started', 'active']);
+    const unhealthyXrayStates = new Set(['stopped', 'offline', 'failed', 'error', 'crashed', 'not running', 'inactive']);
+
+    if (!healthyXrayStates.has(xrayState)) {
+      findings.push(`وضعیت Xray نیازمند بررسی است: ${probe.xrayState}`);
+      if (probe.xrayError) findings.push(`خطای گزارش‌شده: ${probe.xrayError}`);
+      plan.push('گزارش سرویس Xray و اعتبار پیکربندی را از API مجاز جمع‌آوری و پیش‌نمایش تعمیر تهیه کنید.');
+      severity = unhealthyXrayStates.has(xrayState) ? 'error' : 'warning';
+    } else {
+      evidence.push(`وضعیت Xray از Probe: ${probe.xrayState}`);
+    }
   }
   if (findings.length === 0) findings.push('مشکل مشخصی از داده‌های در دسترس تشخیص داده نشد.');
   if (plan.length === 0) plan.push('هیچ تغییری لازم نیست؛ پایش وضعیت ادامه یابد.');
