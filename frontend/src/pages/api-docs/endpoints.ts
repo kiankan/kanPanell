@@ -1771,6 +1771,19 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/nodes/diagnose/:id',
+        summary: 'Run read-only node diagnostics over the panel/node API and return evidence plus an advisory repair plan.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Node ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/nodes/repair/:id',
+        summary: 'Explicitly queue reconciliation of panel-managed inbounds for a node. Does not restart Xray or execute model output.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Node ID.' }],
+        body: '{\n  "confirm": true\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/nodes/probe/:id',
         summary: 'Probe an existing node, updating its cached health state.',
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Node ID.' }],
