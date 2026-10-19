@@ -75,8 +75,9 @@ func BuildNodeDiagnosticReport(node *model.Node, patch HeartbeatPatch, probeErr 
 			detail = patch.LastError
 		}
 		report.Findings = append(report.Findings, NodeDiagnosticFinding{
-			Code: "panel_unreachable", Severity: "error",
-			Title: "Node panel API is unreachable", Detail: detail,
+			Code:                     "panel_unreachable",
+			Severity:             "error",
+			Title:          "Node panel API is unreachable", Detail: detail,
 			Recommendation: "Verify the scheme, address, API port, base path, API token or mTLS setup, TLS verification mode, and network/firewall access. Re-run diagnosis after correcting access.",
 		})
 		return report
@@ -89,72 +90,72 @@ func BuildNodeDiagnosticReport(node *model.Node, patch HeartbeatPatch, probeErr 
 			detail = "The node panel is reachable, but its status endpoint reports an Xray error."
 		}
 		report.Findings = append(report.Findings, NodeDiagnosticFinding{
-			Code: "xray_error",
-			Severity: "error",
-			Title: "Xray reports an error",
-			Detail: detail,
+			Code:           "xray_error",
+			Severity:       "error",
+			Title:          "Xray reports an error",
+			Detail:         detail,
 			Recommendation: "Review the Xray error details. A confirmed restart is available below; restart may briefly interrupt active connections.",
 		})
 		report.RepairActions = append(report.RepairActions, NodeRepairAction{
-			ID: "restart_xray",
-			Label: "Restart Xray on this node",
+			ID:          "restart_xray",
+			Label:       "Restart Xray on this node",
 			Description: "Restart the remote Xray service through the authenticated node panel API, then probe the node again. No inbound configuration will be changed.",
 		})
 	case "stop", "stopped":
 		report.Findings = append(report.Findings, NodeDiagnosticFinding{
-			Code: "xray_stopped",
-			Severity: "error",
-			Title: "Xray is stopped",
-			Detail: "The node panel API is reachable, but Xray reports a stopped state.",
+			Code:           "xray_stopped",
+			Severity:       "error",
+			Title:          "Xray is stopped",
+			Detail:         "The node panel API is reachable, but Xray reports a stopped state.",
 			Recommendation: "A confirmed restart is available below. If Xray fails again, inspect the node's Xray logs and configuration validation.",
 		})
 		report.RepairActions = append(report.RepairActions, NodeRepairAction{
-			ID: "restart_xray",
-			Label: "Start Xray again",
+			ID:          "restart_xray",
+			Label:       "Start Xray again",
 			Description: "Request a restart through the authenticated node panel API and verify the result. No inbound configuration will be changed.",
 		})
 	case "", "unknown":
 		report.Findings = append(report.Findings, NodeDiagnosticFinding{
-			Code: "xray_state_unknown",
-			Severity: "warning",
-			Title: "Xray state is unknown",
-			Detail: "The node panel API responded, but did not provide a recognized Xray state.",
+			Code:           "xray_state_unknown",
+			Severity:       "warning",
+			Title:          "Xray state is unknown",
+			Detail:         "The node panel API responded, but did not provide a recognized Xray state.",
 			Recommendation: "Check the remote panel version and Xray status page. No automatic repair is offered because the service state could not be verified.",
 		})
 	default:
 		report.Findings = append(report.Findings, NodeDiagnosticFinding{
-			Code: "xray_healthy",
-			Severity: "info",
-			Title: "Xray is responding",
-			Detail: "The node panel API reports Xray state: " + report.XrayState + ".",
+			Code:           "xray_healthy",
+			Severity:       "info",
+			Title:          "Xray is responding",
+			Detail:         "The node panel API reports Xray state: " + report.XrayState + ".",
 			Recommendation: "If clients still cannot connect, check the inbound's listen address and port, firewall rules, DNS, transport/security settings, and client configuration.",
 		})
 	}
 
 	if inboundErr != nil {
 		report.Findings = append(report.Findings, NodeDiagnosticFinding{
-			Code: "inbounds_unavailable",
-			Severity: "warning",
-			Title: "Could not inspect remote inbounds",
-			Detail: "The node status was reachable, but the inbound list API failed: " + inboundErr.Error(),
+			Code:           "inbounds_unavailable",
+			Severity:       "warning",
+			Title:          "Could not inspect remote inbounds",
+			Detail:         "The node status was reachable, but the inbound list API failed: " + inboundErr.Error(),
 			Recommendation: "Check the node API permissions and panel compatibility, then retry. No inbound changes were attempted.",
 		})
 	} else if inboundCount == 0 {
 		report.Findings = append(report.Findings, NodeDiagnosticFinding{
-			Code: "no_inbounds",
-			Severity: "warning",
-			Title: "No inbounds found on the node",
-			Detail: "The remote panel returned an empty inbound list.",
+			Code:           "no_inbounds",
+			Severity:       "warning",
+			Title:          "No inbounds found on the node",
+			Detail:         "The remote panel returned an empty inbound list.",
 			Recommendation: "Create an inbound using the normal inbound editor and select this node. A protocol, port, and TLS/Reality settings cannot be safely inferred from health data alone.",
 		})
 	}
 
 	if len(report.Findings) == 0 {
 		report.Findings = append(report.Findings, NodeDiagnosticFinding{
-			Code: "healthy",
-			Severity: "info",
-			Title: "Node checks passed",
-			Detail: "The panel API and inbound list are reachable.",
+			Code:           "healthy",
+			Severity:       "info",
+			Title:          "Node checks passed",
+			Detail:         "The panel API and inbound list are reachable.",
 			Recommendation: "If users still report connection failures, test a client connection and verify the public listener port and firewall.",
 		})
 	}
