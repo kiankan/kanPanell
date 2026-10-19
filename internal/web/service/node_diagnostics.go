@@ -31,6 +31,9 @@ type NodeDiagnosis struct {
 	Summary           string                  `json:"summary"`
 	Findings          []NodeDiagnosticFinding `json:"findings"`
 	RepairPlan        []string                `json:"repairPlan"`
+	AIEnabled         bool                    `json:"aiEnabled"`
+	AIExplanation     string                  `json:"aiExplanation,omitempty"`
+	AIRecommendations []string                `json:"aiRecommendations,omitempty"`
 }
 
 type NodeRepairResult struct {
@@ -75,8 +78,9 @@ func (s *NodeService) DiagnoseNode(ctx context.Context, id int) (*NodeDiagnosis,
 			Recommendation: "Verify the node address, API port, base path, API token or mTLS configuration, and network/TLS reachability.",
 		})
 		result.Summary = "The node API is unreachable. Inbound synchronization cannot be verified yet."
-		result.RepairAvailable = true // A confirmed request can queue reconciliation for when the node returns.
-		result.RepairPlan = []string{"Queue synchronization of panel-managed inbounds; it will take effect when the node is reachable and enabled."}
+		result.RepairAvailable = false
+		result.RepairPlan = []string{}
+		enrichNodeDiagnosis(ctx, result)
 		return result, nil
 	}
 	result.Status = "online"
@@ -143,6 +147,7 @@ func (s *NodeService) DiagnoseNode(ctx context.Context, id int) (*NodeDiagnosis,
 			"Run the diagnostic again to verify the result.",
 		}
 	}
+	enrichNodeDiagnosis(ctx, result)
 	return result, nil
 }
 
