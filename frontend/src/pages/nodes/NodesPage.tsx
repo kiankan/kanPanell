@@ -33,6 +33,7 @@ import { useNodeMutations } from '@/api/queries/useNodeMutations';
 import AppSidebar from '@/layouts/AppSidebar';
 import NodeList from './NodeList';
 import NodeFormModal from './NodeFormModal';
+import NodeDiagnosticsModal from './NodeDiagnosticsModal';
 import { setMessageInstance } from '@/utils/messageBus';
 import { HttpUtil } from '@/utils';
 import type { PanelUpdateInfo } from '../index/PanelUpdateModal';
@@ -102,6 +103,7 @@ export default function NodesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [formNode, setFormNode] = useState<NodeRecord | null>(null);
+  const [diagnosticNode, setDiagnosticNode] = useState<NodeRecord | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [mtlsOpen, setMtlsOpen] = useState(false);
   const [trustCa, setTrustCa] = useState('');
@@ -153,6 +155,10 @@ export default function NodesPage() {
     setFormMode('edit');
     setFormNode({ ...node });
     setFormOpen(true);
+  }, []);
+
+  const onDiagnose = useCallback((node: NodeRecord) => {
+    setDiagnosticNode(node);
   }, []);
 
   const onSave = useCallback(
@@ -358,6 +364,7 @@ export default function NodesPage() {
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onProbe={onProbe}
+                      onDiagnose={onDiagnose}
                       onToggleEnable={onToggleEnable}
                       onUpdateNode={onUpdateNode}
                       onUpdateSelected={onUpdateSelected}
@@ -378,6 +385,15 @@ export default function NodesPage() {
           fetchInbounds={fetchInbounds}
           save={onSave}
           onOpenChange={setFormOpen}
+        />
+
+        <NodeDiagnosticsModal
+          open={!!diagnosticNode}
+          node={diagnosticNode}
+          onClose={() => setDiagnosticNode(null)}
+          onRepaired={() => {
+            void refetch();
+          }}
         />
 
         <Modal
