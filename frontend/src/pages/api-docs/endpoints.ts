@@ -1777,6 +1777,21 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/nodes/diagnose/:id',
+        summary: 'Run live, read-only node panel API, Xray health, and inbound-list checks. Returns findings and a proposed allowlisted repair plan; does not change remote configuration.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Node ID.' }],
+        response: '{ "success": true, "obj": { "nodeId": 1, "status": "online", "xrayState": "stop", "inboundCount": 0, "findings": [], "repairActions": [{ "id": "restart_xray", "label": "Start Xray again" }] } }',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/nodes/repair/:id',
+        summary: 'Execute an explicitly confirmed allowlisted node repair. Currently only restarts Xray when a fresh probe verifies the node is reachable and Xray is stopped or in error; the result includes post-action verification.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Node ID.' }],
+        body: '{ "actionId": "restart_xray" }',
+        response: '{ "success": true, "obj": { "actionId": "restart_xray", "accepted": true, "verified": true, "before": "stop", "after": "running", "message": "Xray responded after the restart request." } }',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/nodes/updatePanel',
         summary:
           'Trigger the official panel self-updater on each given node (downloads the latest release and restarts). Only enabled, online nodes are updated; offline/disabled ones are reported as skipped. Set "dev": true to move the nodes to the rolling per-commit dev channel instead of the latest stable release. Returns a per-node result list.',
