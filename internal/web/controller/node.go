@@ -412,9 +412,9 @@ func (a *NodeController) repair(c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 12*time.Second)
-	defer cancel()
-	before, probeErr := a.nodeService.Probe(ctx, n)
+	probeCtx, probeCancel := context.WithTimeout(c.Request.Context(), 6*time.Second)
+	before, probeErr := a.nodeService.Probe(probeCtx, n)
+	probeCancel()
 	if probeErr != nil {
 		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.probeFailed"), fmt.Errorf("repair cancelled: node panel API is unreachable: %w", probeErr))
 		return
@@ -425,8 +425,11 @@ func (a *NodeController) repair(c *gin.Context) {
 		return
 	}
 
-	if err := a.nodeService.RestartRemoteXray(ctx, id); err != nil {
-		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), fmt.Errorf("remote Xray restart request failed: %w", err))
+	restartCtx, restartCancel := context.WithTimeout(c.Request.Context(), 8*time.Second)
+	restartErr := a.nodeService.RestartRemoteXray(restartCtx, id)
+	restartCancel()
+	if restartErr != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), fmt.Errorf("remote Xray restart request failed: %w", restartErr))
 		return
 	}
 	result := nodeRepairExecution{
@@ -434,7 +437,9 @@ func (a *NodeController) repair(c *gin.Context) {
 		Message: "Restart request accepted. Verifying the node status.",
 	}
 	time.Sleep(1200 * time.Millisecond)
-	after, afterErr := a.nodeService.Probe(ctx, n)
+	verifyCtx, verifyCancel := context.WithTimeout(c.Request.Context(), 6*time.Second)
+	after, afterErr := a.nodeService.Probe(verifyCtx, n)
+	verifyCancel()
 	if afterErr != nil {
 		result.Error = afterErr.Error()
 		result.Message = "Restart was requested, but the node could not be verified afterwards. Re-run diagnosis before further changes."
