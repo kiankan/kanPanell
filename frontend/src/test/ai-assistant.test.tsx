@@ -23,7 +23,7 @@ vi.mock('@/hooks/useTheme', () => ({
 test('shows diagnostics and does not invoke a repair API after acknowledging the plan', async () => {
   getMock.mockResolvedValue({
     success: true,
-    obj: [{ id: 4, name: 'node-4', address: 'https://node.example', enabled: true }],
+    obj: [{ id: 4, name: 'node-4', address: 'https://node.example', enable: true }],
   });
   postMock.mockResolvedValue({
     success: true,
@@ -36,7 +36,7 @@ test('shows diagnostics and does not invoke a repair API after acknowledging the
     </MemoryRouter>,
   );
 
-  await waitFor(() => expect(getMock).toHaveBeenCalledWith('/panel/api/nodes'));
+  await waitFor(() => expect(getMock).toHaveBeenCalledWith('/panel/api/nodes/list', undefined, { silent: true }));
   fireEvent.mouseDown(screen.getByRole('combobox'));
   fireEvent.click(await screen.findByText('node-4 (#4)'));
   fireEvent.click(screen.getByRole('button', { name: 'اجرای بررسی از طریق API' }));
