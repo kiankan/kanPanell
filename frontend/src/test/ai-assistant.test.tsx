@@ -121,3 +121,27 @@ test('warns when a successful probe omits the Xray state', async () => {
 
   expect(await screen.findByText('وضعیت Xray در پاسخ Probe مشخص نیست.')).toBeTruthy();
 });
+
+test('fails closed when a successful probe response has an invalid payload', async () => {
+  getMock.mockResolvedValue({
+    success: true,
+    obj: [{ id: 8, name: 'node-8', enable: true }],
+  });
+  postMock.mockResolvedValue({
+    success: true,
+    obj: { latencyMs: 12 },
+  });
+
+  renderWithProviders(
+    <MemoryRouter>
+      <AIAssistantPage />
+    </MemoryRouter>,
+  );
+
+  fireEvent.mouseDown(screen.getByRole('combobox'));
+  fireEvent.click(await screen.findByText('node-8 (#8)'));
+  fireEvent.click(screen.getByRole('button', { name: 'اجرای بررسی از طریق API' }));
+
+  expect(await screen.findByText(/nodes\/probe response failed validation/)).toBeTruthy();
+  expect(screen.queryByText('API پنل نود قابل دسترسی است.')).toBeNull();
+});
