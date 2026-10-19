@@ -66,6 +66,8 @@ export default function NodeDiagnosticsModal({
 
   const diagnose = useCallback(async (clearPreviousRepair = true) => {
     if (!node?.id) return;
+    setReport(null);
+    setConfirmAction(null);
     setLoading(true);
     setError('');
     if (clearPreviousRepair) setRepairResult(null);
@@ -83,15 +85,12 @@ export default function NodeDiagnosticsModal({
     } finally {
       setLoading(false);
     }
-  }, [node?.id, t]);
+  }, [node, t]);
 
   useEffect(() => {
     if (!open || !node?.id) return;
-    setReport(null);
-    setConfirmAction(null);
-    setRepairResult(null);
     void diagnose();
-  }, [open, node?.id, diagnose]);
+  }, [open, node, diagnose]);
 
   const applyRepair = useCallback(async () => {
     if (!node?.id || !confirmAction) return;
@@ -115,7 +114,7 @@ export default function NodeDiagnosticsModal({
     } finally {
       setRepairing(false);
     }
-  }, [node?.id, confirmAction, diagnose, onRepaired, t]);
+  }, [node, confirmAction, diagnose, onRepaired, t]);
 
   return (
     <>
