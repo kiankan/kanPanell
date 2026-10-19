@@ -46,3 +46,29 @@ test('shows diagnostics and does not invoke a repair API after acknowledging the
   expect(await screen.findByRole('button', { name: 'تأیید بررسی ثبت شد' })).toBeTruthy();
   expect(postMock).toHaveBeenCalledTimes(1);
 });
+
+
+test('does not classify a node with a missing enable field as disabled', async () => {
+  getMock.mockResolvedValue({
+    success: true,
+    obj: [{ id: 5, name: 'node-5', address: 'https://node.example' }],
+  });
+  postMock.mockResolvedValue({
+    success: true,
+    obj: { status: 'online', latencyMs: 20 },
+  });
+
+  renderWithProviders(
+    <MemoryRouter>
+      <AIAssistantPage />
+    </MemoryRouter>,
+  );
+
+  fireEvent.mouseDown(screen.getByRole('combobox'));
+  fireEvent.click(await screen.findByText('node-5 (#5)'));
+  expect(await screen.findByText('نامشخص')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'اجرای بررسی از طریق API' }));
+
+  expect(await screen.findByText('وضعیت فعال‌بودن نود در پاسخ پنل مشخص نیست.')).toBeTruthy();
+  expect(screen.queryByText('نود در پنل غیرفعال است.')).toBeNull();
+});
