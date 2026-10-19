@@ -32,11 +32,11 @@ func TestEnrichNodeDiagnosisSendsOnlySanitizedEvidence(t *testing.T) {
 	t.Setenv("NODE_DIAGNOSTICS_AI_MODEL", "test-model")
 
 	diagnosis := &NodeDiagnosis{
-		NodeName: "private-node-name",
-		Status: "online",
-		XrayState: "error",
-		XrayError: "private raw error containing a token",
-		LocalInboundCount: 4,
+		NodeName:      "private-node-name",
+		Status:        "online",
+		XrayState:     "error",
+		XrayError:     "private raw error containing a token",
+		LocalInboundCount:  4,
 		RemoteInboundCount: 2,
 		Findings: []NodeDiagnosticFinding{{Code: "inbound_count_mismatch", Severity: "warning", Message: "must not be sent"}},
 	}
