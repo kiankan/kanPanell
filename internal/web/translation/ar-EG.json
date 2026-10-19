@@ -126,7 +126,8 @@
     "openMenu": "فتح القائمة",
     "pinSidebar": "تثبيت الشريط الجانبي",
     "unpinSidebar": "إلغاء تثبيت الشريط الجانبي",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "aiAssistant": "AI Assistant"
   },
   "pages": {
     "login": {

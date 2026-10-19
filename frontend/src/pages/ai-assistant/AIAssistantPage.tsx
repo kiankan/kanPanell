@@ -24,7 +24,12 @@ import {
 } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
-import { NodeListSchema, ProbeResultSchema, type NodeRecord, type ProbeResult } from '@/schemas/node';
+import {
+  NodeListSchema,
+  ProbeResultSchema,
+  type NodeRecord,
+  type ProbeResult,
+} from '@/schemas/node';
 import { parseMsg } from '@/utils/zodValidate';
 import AppSidebar from '@/layouts/AppSidebar';
 import { useTheme } from '@/hooks/useTheme';
@@ -43,7 +48,10 @@ type Diagnostic = {
   approved: boolean;
 };
 
-function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'observedAt' | 'approved'> {
+function analyzeNode(
+  node: NodeRecord,
+  probe?: ProbeResult,
+): Omit<Diagnostic, 'observedAt' | 'approved'> {
   const findings: string[] = [];
   const plan: string[] = [];
   const evidence: string[] = [];
@@ -64,7 +72,9 @@ function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'o
     severity = 'error';
   } else {
     findings.push('API پنل نود قابل دسترسی است.');
-    evidence.push(`زمان پاسخ API: ${typeof probe.latencyMs === 'number' ? probe.latencyMs + ' ms' : 'نامشخص'}`);
+    evidence.push(
+      `زمان پاسخ API: ${typeof probe.latencyMs === 'number' ? probe.latencyMs + ' ms' : 'نامشخص'}`,
+    );
   }
   if (probe?.status === 'online' && !probe.xrayState?.trim()) {
     findings.push('وضعیت Xray در پاسخ Probe مشخص نیست.');
@@ -74,12 +84,22 @@ function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'o
   } else if (probe?.xrayState?.trim()) {
     const xrayState = probe.xrayState.trim().toLowerCase();
     const healthyXrayStates = new Set(['running', 'online', 'started', 'active']);
-    const unhealthyXrayStates = new Set(['stopped', 'offline', 'failed', 'error', 'crashed', 'not running', 'inactive']);
+    const unhealthyXrayStates = new Set([
+      'stopped',
+      'offline',
+      'failed',
+      'error',
+      'crashed',
+      'not running',
+      'inactive',
+    ]);
 
     if (!healthyXrayStates.has(xrayState)) {
       findings.push(`وضعیت Xray نیازمند بررسی است: ${probe.xrayState}`);
       if (probe.xrayError) findings.push(`خطای گزارش‌شده: ${probe.xrayError}`);
-      plan.push('گزارش سرویس Xray و اعتبار پیکربندی را از API مجاز جمع‌آوری و پیش‌نمایش تعمیر تهیه کنید.');
+      plan.push(
+        'گزارش سرویس Xray و اعتبار پیکربندی را از API مجاز جمع‌آوری و پیش‌نمایش تعمیر تهیه کنید.',
+      );
       severity = unhealthyXrayStates.has(xrayState) ? 'error' : 'warning';
     } else {
       evidence.push(`وضعیت Xray از Probe: ${probe.xrayState}`);
@@ -90,7 +110,14 @@ function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'o
   evidence.push(`نود: ${node.name || node.remark || 'Node'} (#${node.id})`);
   evidence.push(`آدرس گزارش‌شده: ${node.address || 'ثبت نشده'}`);
   evidence.push(`وضعیت Xray در پنل: ${node.xrayState || 'نامشخص'}`);
-  return { nodeId: node.id, nodeName: node.name || node.remark || `Node #${node.id}`, severity, findings, plan, evidence };
+  return {
+    nodeId: node.id,
+    nodeName: node.name || node.remark || `Node #${node.id}`,
+    severity,
+    findings,
+    plan,
+    evidence,
+  };
 }
 
 export default function AIAssistantPage() {
@@ -100,9 +127,16 @@ export default function AIAssistantPage() {
   const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null);
   const [approved, setApproved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [messageApi, messageContextHolder] = message.useMessage();
   const [notice, setNotice] = useState<string | null>(null);
 
-  const { data: nodes = [], isLoading, isError, error, refetch } = useQuery({
+  const {
+    data: nodes = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['ai-assistant', 'nodes'],
     queryFn: async () => {
       const response = await HttpUtil.get('/panel/api/nodes/list', undefined, { silent: true });
@@ -121,7 +155,7 @@ export default function AIAssistantPage() {
 
   async function runDiagnostics() {
     if (!selectedNode) {
-      message.warning('ابتدا یک نود انتخاب کنید.');
+      messageApi.warning('ابتدا یک نود انتخاب کنید.');
       return;
     }
     setBusy(true);
@@ -131,12 +165,15 @@ export default function AIAssistantPage() {
     try {
       const rawResponse = await HttpUtil.post(`/panel/api/nodes/probe/${selectedNode.id}`);
       const response = parseMsg(rawResponse, ProbeResultSchema, 'nodes/probe', { strict: true });
-      const probe: ProbeResult = response?.success
-        ? response.obj
-        : { status: 'error', error: response?.msg || 'API بررسی نود پاسخ موفق نداد.' };
+      const probe: ProbeResult =
+        response?.success && response.obj
+          ? response.obj
+          : { status: 'error', error: response?.msg || 'API بررسی نود پاسخ موفق نداد.' };
       const result = analyzeNode(selectedNode, probe);
       setDiagnostic({ ...result, observedAt: new Date().toISOString(), approved: false });
-      setNotice('تحلیل بر اساس داده‌های قابل‌دسترسی پنل و پاسخ Probe انجام شد. هیچ تغییری روی نود اعمال نشده است.');
+      setNotice(
+        'تحلیل بر اساس داده‌های قابل‌دسترسی پنل و پاسخ Probe انجام شد. هیچ تغییری روی نود اعمال نشده است.',
+      );
       await refetch();
     } catch (error) {
       const detail = error instanceof Error ? error.message : 'درخواست بررسی نود ناموفق بود.';
@@ -155,19 +192,26 @@ export default function AIAssistantPage() {
     if (!diagnostic) return;
     setApproved(true);
     setDiagnostic({ ...diagnostic, approved: true });
-    setNotice('تأیید ثبت شد، اما اقدامی اجرا نشد. اجرای تعمیر تا زمان وجود API امن و allowlist سمت سرور غیرفعال است.');
+    setNotice(
+      'تأیید ثبت شد، اما اقدامی اجرا نشد. اجرای تعمیر تا زمان وجود API امن و allowlist سمت سرور غیرفعال است.',
+    );
   }
 
   return (
     <div className={`ai-assistant-page ${isDark ? 'is-dark' : ''} ${isUltra ? 'is-ultra' : ''}`}>
+      {messageContextHolder}
       <AppSidebar />
       <main className="ai-assistant-content">
         <div className="ai-assistant-heading">
           <div>
             <Title level={2}>مرکز هوش مصنوعی</Title>
-            <Paragraph type="secondary">تحلیل شفاف نودها، جمع‌آوری شواهد و نمایش برنامه تعمیر قبل از هر اقدام.</Paragraph>
+            <Paragraph type="secondary">
+              تحلیل شفاف نودها، جمع‌آوری شواهد و نمایش برنامه تعمیر قبل از هر اقدام.
+            </Paragraph>
           </div>
-          <Tag color="blue" icon={<SafetyOutlined />}>تعمیر خودکار غیرفعال</Tag>
+          <Tag color="blue" icon={<SafetyOutlined />}>
+            تعمیر خودکار غیرفعال
+          </Tag>
         </div>
 
         <Alert
@@ -180,14 +224,25 @@ export default function AIAssistantPage() {
 
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={14}>
-            <Card title={<Space><ExperimentOutlined /> عیب‌یابی نود</Space>} className="ai-assistant-card">
+            <Card
+              title={
+                <Space>
+                  <ExperimentOutlined /> عیب‌یابی نود
+                </Space>
+              }
+              className="ai-assistant-card"
+            >
               {isError && (
                 <Alert
                   showIcon
                   type="error"
                   message="دریافت فهرست نودها ناموفق بود"
                   description={error instanceof Error ? error.message : 'خطای نامشخص در API پنل'}
-                  action={<Button size="small" onClick={() => void refetch()}>تلاش دوباره</Button>}
+                  action={
+                    <Button size="small" onClick={() => void refetch()}>
+                      تلاش دوباره
+                    </Button>
+                  }
                   style={{ marginBottom: 16 }}
                 />
               )}
@@ -204,18 +259,35 @@ export default function AIAssistantPage() {
                       setDiagnostic(null);
                       setApproved(false);
                     }}
-                    options={nodes.map((node) => ({ value: node.id, label: `${node.name || node.remark || 'Node'} (#${node.id})` }))}
+                    options={nodes.map((node) => ({
+                      value: node.id,
+                      label: `${node.name || node.remark || 'Node'} (#${node.id})`,
+                    }))}
                     style={{ width: '100%' }}
                     notFoundContent="نودی یافت نشد"
                   />
                   {selectedNode && (
                     <Descriptions size="small" column={1} bordered>
                       <Descriptions.Item label="نام">{selectedNode.name}</Descriptions.Item>
-                      <Descriptions.Item label="آدرس">{selectedNode.address || 'ثبت نشده'}</Descriptions.Item>
-                      <Descriptions.Item label="وضعیت">{selectedNode.enable === true ? 'فعال' : selectedNode.enable === false ? 'غیرفعال' : 'نامشخص'}</Descriptions.Item>
+                      <Descriptions.Item label="آدرس">
+                        {selectedNode.address || 'ثبت نشده'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="وضعیت">
+                        {selectedNode.enable === true
+                          ? 'فعال'
+                          : selectedNode.enable === false
+                            ? 'غیرفعال'
+                            : 'نامشخص'}
+                      </Descriptions.Item>
                     </Descriptions>
                   )}
-                  <Button type="primary" icon={<ThunderboltOutlined />} onClick={runDiagnostics} loading={busy} disabled={!selectedNode || isLoading || isError}>
+                  <Button
+                    type="primary"
+                    icon={<ThunderboltOutlined />}
+                    onClick={runDiagnostics}
+                    loading={busy}
+                    disabled={!selectedNode || isLoading || isError}
+                  >
                     اجرای بررسی از طریق API
                   </Button>
                 </Space>
@@ -223,9 +295,17 @@ export default function AIAssistantPage() {
             </Card>
           </Col>
           <Col xs={24} lg={10}>
-            <Card title={<Space><CloudServerOutlined /> دستیار هوشمند</Space>} className="ai-assistant-card">
+            <Card
+              title={
+                <Space>
+                  <CloudServerOutlined /> دستیار هوشمند
+                </Space>
+              }
+              className="ai-assistant-card"
+            >
               <Paragraph type="secondary">
-                پرسش خود را درباره وضعیت نود یا خطای مشاهده‌شده بنویسید. اتصال به ارائه‌دهنده مدل زبانی در این تغییر اضافه نشده و این بخش فعلاً نقش میزکار تحلیل و گزارش را دارد.
+                پرسش خود را درباره وضعیت نود یا خطای مشاهده‌شده بنویسید. اتصال به ارائه‌دهنده مدل
+                زبانی در این تغییر اضافه نشده و این بخش فعلاً نقش میزکار تحلیل و گزارش را دارد.
               </Paragraph>
               <Input.TextArea
                 value={question}
@@ -238,9 +318,11 @@ export default function AIAssistantPage() {
               <Button
                 style={{ marginTop: 12 }}
                 onClick={() => {
-                  setNotice(question.trim()
-                    ? 'برای پاسخ مبتنی بر مدل زبانی، ابتدا باید ارائه‌دهنده و کلید API امن سمت سرور پیکربندی شوند. پرسش شما در این نسخه به سرویس خارجی ارسال نشده است.'
-                    : 'ابتدا پرسش را وارد کنید.');
+                  setNotice(
+                    question.trim()
+                      ? 'برای پاسخ مبتنی بر مدل زبانی، ابتدا باید ارائه‌دهنده و کلید API امن سمت سرور پیکربندی شوند. پرسش شما در این نسخه به سرویس خارجی ارسال نشده است.'
+                      : 'ابتدا پرسش را وارد کنید.',
+                  );
                 }}
                 disabled={!question.trim()}
               >
@@ -255,7 +337,19 @@ export default function AIAssistantPage() {
             title="یافته‌ها و برنامه تعمیر پیشنهادی"
             className="ai-assistant-card"
             style={{ marginTop: 16 }}
-            extra={<Tag color={diagnostic.severity === 'error' ? 'red' : diagnostic.severity === 'warning' ? 'orange' : 'green'}>{diagnostic.severity.toUpperCase()}</Tag>}
+            extra={
+              <Tag
+                color={
+                  diagnostic.severity === 'error'
+                    ? 'red'
+                    : diagnostic.severity === 'warning'
+                      ? 'orange'
+                      : 'green'
+                }
+              >
+                {diagnostic.severity.toUpperCase()}
+              </Tag>
+            }
           >
             <Alert
               type="warning"
@@ -265,21 +359,49 @@ export default function AIAssistantPage() {
               style={{ marginBottom: 16 }}
             />
             <Title level={5}>علت‌ها و یافته‌های احتمالی</Title>
-            <ul>{diagnostic.findings.map((finding, index) => <li key={index}>{finding}</li>)}</ul>
+            <ul>
+              {diagnostic.findings.map((finding, index) => (
+                <li key={index}>{finding}</li>
+              ))}
+            </ul>
             <Title level={5}>برنامه پیشنهادی</Title>
-            <ol>{diagnostic.plan.map((step, index) => <li key={index}>{step}</li>)}</ol>
+            <ol>
+              {diagnostic.plan.map((step, index) => (
+                <li key={index}>{step}</li>
+              ))}
+            </ol>
             <Title level={5}>شواهد</Title>
-            <ul>{diagnostic.evidence.map((item, index) => <li key={index}>{item}</li>)}</ul>
-            <Text type="secondary">زمان ثبت: {new Date(diagnostic.observedAt).toLocaleString()}</Text>
+            <ul>
+              {diagnostic.evidence.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+            <Text type="secondary">
+              زمان ثبت: {new Date(diagnostic.observedAt).toLocaleString()}
+            </Text>
             <div style={{ marginTop: 16 }}>
-              <Button type="primary" icon={<CheckCircleOutlined />} onClick={approvePlan} disabled={approved}>
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={approvePlan}
+                disabled={approved}
+              >
                 {approved ? 'تأیید بررسی ثبت شد' : 'تأیید برنامه بررسی'}
               </Button>
             </div>
           </Card>
         )}
 
-        {notice && <Alert style={{ marginTop: 16 }} showIcon type="info" message={notice} closable onClose={() => setNotice(null)} />}
+        {notice && (
+          <Alert
+            style={{ marginTop: 16 }}
+            showIcon
+            type="info"
+            message={notice}
+            closable
+            onClose={() => setNotice(null)}
+          />
+        )}
       </main>
     </div>
   );

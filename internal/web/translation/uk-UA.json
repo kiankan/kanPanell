@@ -126,7 +126,8 @@
     "openMenu": "Відкрити меню",
     "pinSidebar": "Закріпити бічну панель",
     "unpinSidebar": "Відкріпити бічну панель",
-    "subFormats": "Формати підписки"
+    "subFormats": "Формати підписки",
+    "aiAssistant": "AI Assistant"
   },
   "pages": {
     "login": {

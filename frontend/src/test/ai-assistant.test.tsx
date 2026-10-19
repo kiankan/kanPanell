@@ -7,7 +7,9 @@ import { renderWithProviders } from './test-utils';
 
 const { getMock, postMock } = vi.hoisted(() => ({ getMock: vi.fn(), postMock: vi.fn() }));
 
-vi.mock('@/utils', () => ({
+vi.mock('@/utils', async (importOriginal) => ({
+  // Only HttpUtil is faked; parseMsg and friends still need the real Msg.
+  ...(await importOriginal<typeof import('@/utils')>()),
   HttpUtil: {
     get: (...args: unknown[]) => getMock(...args),
     post: (...args: unknown[]) => postMock(...args),
@@ -15,7 +17,10 @@ vi.mock('@/utils', () => ({
 }));
 
 vi.mock('@/layouts/AppSidebar', () => ({ default: () => <div data-testid="sidebar" /> }));
-vi.mock('@/hooks/useTheme', () => ({
+vi.mock('@/hooks/useTheme', async (importOriginal) => ({
+  // Keep the real ThemeProvider (renderWithProviders wraps with it); only
+  // pin the values the page reads from useTheme().
+  ...(await importOriginal<typeof import('@/hooks/useTheme')>()),
   useTheme: () => ({ isDark: true, isUltra: false }),
 }));
 
@@ -35,15 +40,17 @@ test('shows diagnostics and does not invoke a repair API after acknowledging the
     </MemoryRouter>,
   );
 
-  await waitFor(() => expect(getMock).toHaveBeenCalledWith('/panel/api/nodes/list', undefined, { silent: true }));
+  await waitFor(() =>
+    expect(getMock).toHaveBeenCalledWith('/panel/api/nodes/list', undefined, { silent: true }),
+  );
   fireEvent.mouseDown(screen.getByRole('combobox'));
   fireEvent.click(await screen.findByText('node-4 (#4)'));
-  fireEvent.click(screen.getByRole('button', { name: 'اجرای بررسی از طریق API' }));
+  fireEvent.click(screen.getByRole('button', { name: /اجرای بررسی از طریق API/ }));
 
   await waitFor(() => expect(postMock).toHaveBeenCalledWith('/panel/api/nodes/probe/4'));
   expect(await screen.findByText('API پنل نود قابل دسترسی است.')).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'تأیید برنامه بررسی' }));
-  expect(await screen.findByRole('button', { name: 'تأیید بررسی ثبت شد' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: /تأیید برنامه بررسی/ }));
+  expect(await screen.findByRole('button', { name: /تأیید بررسی ثبت شد/ })).toBeTruthy();
   expect(postMock).toHaveBeenCalledTimes(1);
 });
 
@@ -66,7 +73,7 @@ test('does not classify a node with a missing enable field as disabled', async (
   fireEvent.mouseDown(screen.getByRole('combobox'));
   fireEvent.click(await screen.findByText('node-5 (#5)'));
   expect(await screen.findByText('نامشخص')).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'اجرای بررسی از طریق API' }));
+  fireEvent.click(screen.getByRole('button', { name: /اجرای بررسی از طریق API/ }));
 
   expect(await screen.findByText('وضعیت فعال‌بودن نود در پاسخ پنل مشخص نیست.')).toBeTruthy();
   expect(screen.queryByText('نود در پنل غیرفعال است.')).toBeNull();
@@ -90,7 +97,7 @@ test('flags a negated Xray state instead of treating the word running as healthy
 
   fireEvent.mouseDown(screen.getByRole('combobox'));
   fireEvent.click(await screen.findByText('node-6 (#6)'));
-  fireEvent.click(screen.getByRole('button', { name: 'اجرای بررسی از طریق API' }));
+  fireEvent.click(screen.getByRole('button', { name: /اجرای بررسی از طریق API/ }));
 
   expect(await screen.findByText('وضعیت Xray نیازمند بررسی است: not running')).toBeTruthy();
   expect(screen.getByText('ERROR')).toBeTruthy();
@@ -114,7 +121,7 @@ test('warns when a successful probe omits the Xray state', async () => {
 
   fireEvent.mouseDown(screen.getByRole('combobox'));
   fireEvent.click(await screen.findByText('node-7 (#7)'));
-  fireEvent.click(screen.getByRole('button', { name: 'اجرای بررسی از طریق API' }));
+  fireEvent.click(screen.getByRole('button', { name: /اجرای بررسی از طریق API/ }));
 
   expect(await screen.findByText('وضعیت Xray در پاسخ Probe مشخص نیست.')).toBeTruthy();
 });
@@ -137,8 +144,11 @@ test('fails closed when a successful probe response has an invalid payload', asy
 
   fireEvent.mouseDown(screen.getByRole('combobox'));
   fireEvent.click(await screen.findByText('node-8 (#8)'));
-  fireEvent.click(screen.getByRole('button', { name: 'اجرای بررسی از طریق API' }));
+  fireEvent.click(screen.getByRole('button', { name: /اجرای بررسی از طریق API/ }));
 
-  expect(await screen.findByText(/nodes\/probe response failed validation/)).toBeTruthy();
+  // The failure is surfaced both in the notice and in the evidence list.
+  expect(
+    (await screen.findAllByText(/nodes\/probe response failed validation/)).length,
+  ).toBeGreaterThan(0);
   expect(screen.queryByText('API پنل نود قابل دسترسی است.')).toBeNull();
 });
