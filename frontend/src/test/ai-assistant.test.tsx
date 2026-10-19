@@ -72,3 +72,28 @@ test('does not classify a node with a missing enable field as disabled', async (
   expect(await screen.findByText('وضعیت فعال‌بودن نود در پاسخ پنل مشخص نیست.')).toBeTruthy();
   expect(screen.queryByText('نود در پنل غیرفعال است.')).toBeNull();
 });
+
+
+test('flags a negated Xray state instead of treating the word running as healthy', async () => {
+  getMock.mockResolvedValue({
+    success: true,
+    obj: [{ id: 6, name: 'node-6', enable: true }],
+  });
+  postMock.mockResolvedValue({
+    success: true,
+    obj: { status: 'online', xrayState: 'not running' },
+  });
+
+  renderWithProviders(
+    <MemoryRouter>
+      <AIAssistantPage />
+    </MemoryRouter>,
+  );
+
+  fireEvent.mouseDown(screen.getByRole('combobox'));
+  fireEvent.click(await screen.findByText('node-6 (#6)'));
+  fireEvent.click(screen.getByRole('button', { name: 'اجرای بررسی از طریق API' }));
+
+  expect(await screen.findByText('وضعیت Xray نیازمند بررسی است: not running')).toBeTruthy();
+  expect(screen.getByText('ERROR')).toBeTruthy();
+});
