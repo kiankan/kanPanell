@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -126,6 +125,3 @@ func enrichNodeDiagnosis(parent context.Context, diagnosis *NodeDiagnosis) {
 	diagnosis.AIRecommendations = analysis.Recommendations
 }
 
-// Keep the endpoint contract explicit if the configured AI server returns a
-// non-JSON response; callers intentionally fall back to deterministic rules.
-var _ = fmt.Sprintf
