@@ -5,8 +5,7 @@ import { expect, test, vi } from 'vitest';
 import AIAssistantPage from '@/pages/ai-assistant/AIAssistantPage';
 import { renderWithProviders } from './test-utils';
 
-const getMock = vi.fn();
-const postMock = vi.fn();
+const { getMock, postMock } = vi.hoisted(() => ({ getMock: vi.fn(), postMock: vi.fn() }));
 
 vi.mock('@/utils', () => ({
   HttpUtil: {
