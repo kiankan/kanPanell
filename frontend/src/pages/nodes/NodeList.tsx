@@ -541,6 +541,7 @@ export default function NodeList({
       latestVersion,
       onToggleEnable,
       onProbe,
+      onDiagnose,
       onEdit,
       onDelete,
       onUpdateNode,
