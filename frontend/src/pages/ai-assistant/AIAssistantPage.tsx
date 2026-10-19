@@ -33,9 +33,9 @@ const { Title, Paragraph, Text } = Typography;
 
 type NodeRecord = {
   id: number;
-  name: string;
+  name?: string;
   address?: string;
-  enabled?: boolean;
+  enable?: boolean;
   status?: string;
   xrayState?: string;
   xrayError?: string;
@@ -68,7 +68,7 @@ function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'o
   const evidence: string[] = [];
   let severity: Diagnostic['severity'] = 'info';
 
-  if (!node.enabled) {
+  if (!node.enable) {
     findings.push('نود در پنل غیرفعال است.');
     plan.push('پس از بررسی وابستگی‌ها، فعال‌سازی نود را با تأیید جداگانه پیشنهاد کنید.');
     severity = 'warning';
@@ -89,7 +89,7 @@ function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'o
   }
   if (findings.length === 0) findings.push('مشکل مشخصی از داده‌های در دسترس تشخیص داده نشد.');
   if (plan.length === 0) plan.push('هیچ تغییری لازم نیست؛ پایش وضعیت ادامه یابد.');
-  evidence.push(`نود: ${node.name} (#${node.id})`);
+  evidence.push(`نود: ${node.name || node.remark || 'Node'} (#${node.id})`);
   evidence.push(`آدرس گزارش‌شده: ${node.address || 'ثبت نشده'}`);
   evidence.push(`وضعیت Xray در پنل: ${node.xrayState || 'نامشخص'}`);
   return { nodeId: node.id, nodeName: node.name, severity, findings, plan, evidence };
@@ -108,7 +108,7 @@ export default function AIAssistantPage() {
   const { data: nodes = [], isLoading, refetch } = useQuery({
     queryKey: ['ai-assistant', 'nodes'],
     queryFn: async () => {
-      const response = await HttpUtil.get<ApiMessage<NodeRecord[]>>('/panel/api/nodes');
+      const response = await HttpUtil.get<ApiMessage<NodeRecord[]>>('/panel/api/nodes/list', undefined, { silent: true });
       if (!response?.success || !Array.isArray(response.obj)) return [];
       return response.obj;
     },
@@ -191,7 +191,7 @@ export default function AIAssistantPage() {
                       setDiagnostic(null);
                       setApproved(false);
                     }}
-                    options={nodes.map((node) => ({ value: node.id, label: `${node.name} (#${node.id})` }))}
+                    options={nodes.map((node) => ({ value: node.id, label: `${node.name || node.remark || 'Node'} (#${node.id})` }))}
                     style={{ width: '100%' }}
                     notFoundContent="نودی یافت نشد"
                   />
@@ -199,7 +199,7 @@ export default function AIAssistantPage() {
                     <Descriptions size="small" column={1} bordered>
                       <Descriptions.Item label="نام">{selectedNode.name}</Descriptions.Item>
                       <Descriptions.Item label="آدرس">{selectedNode.address || 'ثبت نشده'}</Descriptions.Item>
-                      <Descriptions.Item label="وضعیت">{selectedNode.enabled ? 'فعال' : 'غیرفعال یا نامشخص'}</Descriptions.Item>
+                      <Descriptions.Item label="وضعیت">{selectedNode.enable ? 'فعال' : 'غیرفعال یا نامشخص'}</Descriptions.Item>
                     </Descriptions>
                   )}
                   <Button type="primary" icon={<ThunderboltOutlined />} onClick={runDiagnostics} loading={busy} disabled={!selectedNode}>
