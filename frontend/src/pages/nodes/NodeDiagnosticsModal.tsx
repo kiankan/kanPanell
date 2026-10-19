@@ -100,10 +100,9 @@ export default function NodeDiagnosticsModal({
       if (!node?.id || !confirmAction) {
         throw new Error(t('pages.nodes.diagnostics.repairFailed'));
       }
-      const response = await HttpUtil.post<RepairResult>(
-        `/panel/api/nodes/repair/${node.id}`,
-        { actionId: confirmAction.id },
-      );
+      const response = await HttpUtil.post<RepairResult>(`/panel/api/nodes/repair/${node.id}`, {
+        actionId: confirmAction.id,
+      });
       if (!response?.success || !response.obj) {
         throw new Error(response?.msg || t('pages.nodes.diagnostics.repairFailed'));
       }
@@ -172,7 +171,7 @@ export default function NodeDiagnosticsModal({
                     : t('pages.nodes.diagnostics.inboundUnavailable')}
                 </Descriptions.Item>
               </Descriptions>
-              <Divider orientation="left">{t('pages.nodes.diagnostics.findings')}</Divider>
+              <Divider orientation="start">{t('pages.nodes.diagnostics.findings')}</Divider>
               <List
                 dataSource={report.findings || []}
                 locale={{ emptyText: t('pages.nodes.diagnostics.noFindings') }}
@@ -238,7 +237,9 @@ export default function NodeDiagnosticsModal({
                     `${t('pages.nodes.diagnostics.before')}: ${repairResult.before || '-'}`,
                     `${t('pages.nodes.diagnostics.after')}: ${repairResult.after || '-'}`,
                     repairResult.error || '',
-                  ].filter(Boolean).join(' · ')}
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                   style={{ marginTop: 12 }}
                 />
               )}
