@@ -371,7 +371,6 @@ func (a *NodeController) history(c *gin.Context) {
 	jsonObj(c, a.nodeService.AggregateNodeMetric(id, metric, bucket, 60), nil)
 }
 
-
 // diagnose returns a read-only snapshot and a bounded, API-only repair plan.
 // The plan never executes automatically; the caller must explicitly confirm it.
 func (a *NodeController) diagnose(c *gin.Context) {
