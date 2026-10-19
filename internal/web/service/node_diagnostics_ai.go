@@ -13,8 +13,8 @@ import (
 )
 
 type nodeAIAnalysis struct {
-	Explanation       string   `json:"explanation"`
-	Recommendations   []string `json:"recommendations"`
+	Explanation	string	`json:"explanation"`
+	Recommendations	[]string `json:"recommendations"`
 }
 
 type nodeAIChatResponse struct {
@@ -42,7 +42,7 @@ func enrichNodeDiagnosis(parent context.Context, diagnosis *NodeDiagnosis) {
 	}
 
 	type safeFinding struct {
-		Code     string `json:"code"`
+		Code	string `json:"code"`
 		Severity string `json:"severity"`
 	}
 	findings := make([]safeFinding, 0, len(diagnosis.Findings))
