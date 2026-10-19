@@ -40,7 +40,7 @@ interface NodeListProps {
   onEdit: (node: NodeRecord) => void;
   onDelete: (node: NodeRecord) => void;
   onProbe: (node: NodeRecord) => void;
-  onDiagnose: (node: NodeRecord) => void;
+  onDiagnose?: (node: NodeRecord) => void;
   onToggleEnable: (node: NodeRecord, next: boolean) => void;
   onUpdateNode: (node: NodeRecord) => void;
   onUpdateSelected: () => void;
@@ -278,7 +278,7 @@ export default function NodeList({
                   style={{ fontSize: 16 }}
                   icon={<ToolOutlined />}
                   aria-label={t('pages.nodes.diagnostics.button')}
-                  onClick={() => onDiagnose(record)}
+                  onClick={() => onDiagnose?.(record)}
                 />
               </Tooltip>
               {isUpdateEligible(record) && (
