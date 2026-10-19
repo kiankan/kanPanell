@@ -466,7 +466,11 @@ export default function NodesPage() {
 
         <Modal
           open={diagnosisOpen}
-          title={diagnosisNode ? `Smart diagnostics — ${diagnosisNode.name || diagnosisNode.address || diagnosisNode.id}` : 'Smart diagnostics'}
+          title={
+            diagnosisNode
+              ? `Smart diagnostics — ${diagnosisNode.name || diagnosisNode.address || diagnosisNode.id}`
+              : 'Smart diagnostics'
+          }
           confirmLoading={repairing}
           okText="Apply repair plan"
           cancelText="Close"
@@ -482,7 +486,13 @@ export default function NodesPage() {
           ) : diagnosis ? (
             <div>
               <Alert
-                type={diagnosis.findings.some((finding) => finding.severity === 'error') ? 'error' : diagnosis.findings.some((finding) => finding.severity === 'warning') ? 'warning' : 'success'}
+                type={
+                  diagnosis.findings.some((finding) => finding.severity === 'error')
+                    ? 'error'
+                    : diagnosis.findings.some((finding) => finding.severity === 'warning')
+                      ? 'warning'
+                      : 'success'
+                }
                 showIcon
                 message={diagnosis.summary}
                 description={`Panel API: ${diagnosis.status}; Xray: ${diagnosis.xrayState || 'unknown'}; inbound count: panel ${diagnosis.localInboundCount}, node ${diagnosis.remoteInboundCount}.`}
@@ -492,7 +502,13 @@ export default function NodesPage() {
               {diagnosis.findings.map((finding) => (
                 <Alert
                   key={finding.code}
-                  type={finding.severity === 'error' ? 'error' : finding.severity === 'warning' ? 'warning' : 'info'}
+                  type={
+                    finding.severity === 'error'
+                      ? 'error'
+                      : finding.severity === 'warning'
+                        ? 'warning'
+                        : 'info'
+                  }
                   showIcon
                   message={finding.message}
                   description={finding.recommendation}
@@ -522,7 +538,9 @@ export default function NodesPage() {
               <Typography.Title level={5}>Proposed repair plan</Typography.Title>
               {diagnosis.repairPlan.length ? (
                 <ol style={{ paddingInlineStart: 24 }}>
-                  {diagnosis.repairPlan.map((step) => <li key={step}>{step}</li>)}
+                  {diagnosis.repairPlan.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
                 </ol>
               ) : (
                 <Typography.Paragraph type="secondary">
@@ -530,7 +548,9 @@ export default function NodesPage() {
                 </Typography.Paragraph>
               )}
               <Typography.Paragraph type="secondary">
-                Nothing is changed until you select “Apply repair plan”. This action only queues synchronization of panel-managed inbounds; it does not restart Xray or change ports, TLS, or Reality settings. AI analysis is advisory and is never executed.
+                Nothing is changed until you select “Apply repair plan”. This action only queues
+                synchronization of panel-managed inbounds; it does not restart Xray or change ports,
+                TLS, or Reality settings. AI analysis is advisory and is never executed.
               </Typography.Paragraph>
             </div>
           ) : (
