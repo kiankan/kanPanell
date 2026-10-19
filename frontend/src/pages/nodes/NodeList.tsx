@@ -542,6 +542,7 @@ export default function NodeList({
       onProbe,
       onEdit,
       onDelete,
+      onSmartDiagnose,
       onUpdateNode,
       nameByGuid,
     ],
