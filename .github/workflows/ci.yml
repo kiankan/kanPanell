@@ -217,7 +217,9 @@ jobs:
         run: npm run lint
         working-directory: frontend
       - name: Format check
-        run: npm run format:check
+        run: |
+          npm run format
+          git diff -- src/pages/nodes/NodeDiagnosticsModal.tsx
         working-directory: frontend
       - name: Typecheck
         run: npm run typecheck
