@@ -24,30 +24,13 @@ import {
 } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
+import { NodeListSchema, ProbeResultSchema, type NodeRecord, type ProbeResult } from '@/schemas/node';
+import { parseMsg } from '@/utils/zodValidate';
 import AppSidebar from '@/layouts/AppSidebar';
 import { useTheme } from '@/hooks/useTheme';
 import './AIAssistantPage.css';
 
 const { Title, Paragraph, Text } = Typography;
-
-type NodeRecord = {
-  id: number;
-  name?: string;
-  remark?: string;
-  address?: string;
-  enable?: boolean;
-  status?: string;
-  xrayState?: string;
-  xrayError?: string;
-};
-
-type ProbeResult = {
-  status?: string;
-  latencyMs?: number;
-  error?: string;
-  xrayState?: string;
-  xrayError?: string;
-};
 
 type Diagnostic = {
   nodeId: number;
@@ -59,8 +42,6 @@ type Diagnostic = {
   evidence: string[];
   approved: boolean;
 };
-
-type ApiMessage<T> = { success?: boolean; msg?: string; obj?: T };
 
 function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'observedAt' | 'approved'> {
   const findings: string[] = [];
@@ -85,7 +66,12 @@ function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'o
     findings.push('API پنل نود قابل دسترسی است.');
     evidence.push(`زمان پاسخ API: ${typeof probe.latencyMs === 'number' ? probe.latencyMs + ' ms' : 'نامشخص'}`);
   }
-  if (probe?.xrayState?.trim()) {
+  if (probe?.status === 'online' && !probe.xrayState?.trim()) {
+    findings.push('وضعیت Xray در پاسخ Probe مشخص نیست.');
+    evidence.push('فیلد xrayState در پاسخ Probe وجود ندارد یا خالی است.');
+    plan.push('وضعیت Xray را از API مجاز دوباره جمع‌آوری کنید؛ تا تأیید وضعیت، تعمیر انجام نشود.');
+    severity = severity === 'error' ? 'error' : 'warning';
+  } else if (probe?.xrayState?.trim()) {
     const xrayState = probe.xrayState.trim().toLowerCase();
     const healthyXrayStates = new Set(['running', 'online', 'started', 'active']);
     const unhealthyXrayStates = new Set(['stopped', 'offline', 'failed', 'error', 'crashed', 'not running', 'inactive']);
@@ -119,10 +105,11 @@ export default function AIAssistantPage() {
   const { data: nodes = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['ai-assistant', 'nodes'],
     queryFn: async () => {
-      const response = await HttpUtil.get<ApiMessage<NodeRecord[]>>('/panel/api/nodes/list', undefined, { silent: true });
+      const response = await HttpUtil.get('/panel/api/nodes/list', undefined, { silent: true });
       if (!response?.success) throw new Error(response?.msg || 'Failed to fetch nodes');
-      if (!Array.isArray(response.obj)) throw new Error('Invalid nodes response');
-      return response.obj;
+      const validated = parseMsg(response, NodeListSchema, 'nodes/list');
+      if (!Array.isArray(validated.obj)) throw new Error('Invalid nodes response');
+      return validated.obj;
     },
     staleTime: 30_000,
   });
@@ -142,8 +129,9 @@ export default function AIAssistantPage() {
     setApproved(false);
     setNotice(null);
     try {
-      const response = await HttpUtil.post<ApiMessage<ProbeResult>>(`/panel/api/nodes/probe/${selectedNode.id}`);
-      const probe = response?.success
+      const rawResponse = await HttpUtil.post(`/panel/api/nodes/probe/${selectedNode.id}`);
+      const response = parseMsg(rawResponse, ProbeResultSchema, 'nodes/probe');
+      const probe: ProbeResult = response?.success
         ? response.obj
         : { status: 'error', error: response?.msg || 'API بررسی نود پاسخ موفق نداد.' };
       const result = analyzeNode(selectedNode, probe);
