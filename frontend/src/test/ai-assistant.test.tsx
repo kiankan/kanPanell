@@ -47,7 +47,6 @@ test('shows diagnostics and does not invoke a repair API after acknowledging the
   expect(postMock).toHaveBeenCalledTimes(1);
 });
 
-
 test('does not classify a node with a missing enable field as disabled', async () => {
   getMock.mockResolvedValue({
     success: true,
@@ -73,7 +72,6 @@ test('does not classify a node with a missing enable field as disabled', async (
   expect(screen.queryByText('نود در پنل غیرفعال است.')).toBeNull();
 });
 
-
 test('flags a negated Xray state instead of treating the word running as healthy', async () => {
   getMock.mockResolvedValue({
     success: true,
@@ -97,7 +95,6 @@ test('flags a negated Xray state instead of treating the word running as healthy
   expect(await screen.findByText('وضعیت Xray نیازمند بررسی است: not running')).toBeTruthy();
   expect(screen.getByText('ERROR')).toBeTruthy();
 });
-
 
 test('warns when a successful probe omits the Xray state', async () => {
   getMock.mockResolvedValue({
