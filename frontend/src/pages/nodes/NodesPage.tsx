@@ -58,6 +58,9 @@ interface NodeDiagnosis {
   summary: string;
   findings: NodeDiagnosticFinding[];
   repairPlan: string[];
+  aiEnabled: boolean;
+  aiExplanation?: string;
+  aiRecommendations?: string[];
 }
 
 interface NodeRepairResult {
@@ -496,6 +499,26 @@ export default function NodesPage() {
                   style={{ marginBottom: 8 }}
                 />
               ))}
+              {diagnosis.aiEnabled && diagnosis.aiExplanation ? (
+                <>
+                  <Typography.Title level={5}>AI analysis (advisory)</Typography.Title>
+                  <Alert
+                    type="info"
+                    showIcon
+                    message={diagnosis.aiExplanation}
+                    description={
+                      diagnosis.aiRecommendations?.length ? (
+                        <ul style={{ paddingInlineStart: 20, marginBottom: 0 }}>
+                          {diagnosis.aiRecommendations.map((recommendation, index) => (
+                            <li key={`${index}-${recommendation}`}>{recommendation}</li>
+                          ))}
+                        </ul>
+                      ) : undefined
+                    }
+                    style={{ marginBottom: 16 }}
+                  />
+                </>
+              ) : null}
               <Typography.Title level={5}>Proposed repair plan</Typography.Title>
               {diagnosis.repairPlan.length ? (
                 <ol style={{ paddingInlineStart: 24 }}>
@@ -507,7 +530,7 @@ export default function NodesPage() {
                 </Typography.Paragraph>
               )}
               <Typography.Paragraph type="secondary">
-                Nothing is changed until you select “Apply repair plan”. This action only queues synchronization of panel-managed inbounds; it does not restart Xray or change ports, TLS, or Reality settings.
+                Nothing is changed until you select “Apply repair plan”. This action only queues synchronization of panel-managed inbounds; it does not restart Xray or change ports, TLS, or Reality settings. AI analysis is advisory and is never executed.
               </Typography.Paragraph>
             </div>
           ) : (
