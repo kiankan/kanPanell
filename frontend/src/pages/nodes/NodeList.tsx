@@ -39,6 +39,7 @@ interface NodeListProps {
   onEdit: (node: NodeRecord) => void;
   onDelete: (node: NodeRecord) => void;
   onProbe: (node: NodeRecord) => void;
+  onSmartDiagnose: (node: NodeRecord) => void;
   onToggleEnable: (node: NodeRecord, next: boolean) => void;
   onUpdateNode: (node: NodeRecord) => void;
   onUpdateSelected: () => void;
@@ -175,6 +176,7 @@ export default function NodeList({
   onEdit,
   onDelete,
   onProbe,
+  onSmartDiagnose,
   onToggleEnable,
   onUpdateNode,
   onUpdateSelected,
@@ -266,6 +268,16 @@ export default function NodeList({
                   icon={<ThunderboltOutlined />}
                   aria-label={t('pages.nodes.probe')}
                   onClick={() => onProbe(record)}
+                />
+              </Tooltip>
+              <Tooltip title="Smart diagnostics">
+                <Button
+                  type="text"
+                  size="small"
+                  style={{ fontSize: 16 }}
+                  icon={<SafetyCertificateOutlined />}
+                  aria-label="Smart diagnostics"
+                  onClick={() => onSmartDiagnose(record)}
                 />
               </Tooltip>
               {isUpdateEligible(record) && (
@@ -668,6 +680,15 @@ export default function NodeList({
                                   </>
                                 ),
                                 onClick: () => onProbe(record),
+                              },
+                              {
+                                key: 'diagnose',
+                                label: (
+                                  <>
+                                    <SafetyCertificateOutlined /> Smart diagnostics
+                                  </>
+                                ),
+                                onClick: () => onSmartDiagnose(record),
                               },
                               ...(isUpdateEligible(record)
                                 ? [
