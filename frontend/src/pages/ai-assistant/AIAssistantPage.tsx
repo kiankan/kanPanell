@@ -68,9 +68,13 @@ function analyzeNode(node: NodeRecord, probe?: ProbeResult): Omit<Diagnostic, 'o
   const evidence: string[] = [];
   let severity: Diagnostic['severity'] = 'info';
 
-  if (!node.enable) {
+  if (node.enable === false) {
     findings.push('نود در پنل غیرفعال است.');
     plan.push('پس از بررسی وابستگی‌ها، فعال‌سازی نود را با تأیید جداگانه پیشنهاد کنید.');
+    severity = 'warning';
+  } else if (node.enable === undefined) {
+    findings.push('وضعیت فعال‌بودن نود در پاسخ پنل مشخص نیست.');
+    evidence.push('فیلد enable در پاسخ فهرست نودها وجود ندارد؛ وضعیت غیرفعال فرض نشده است.');
     severity = 'warning';
   }
   if (probe?.status !== 'online') {
@@ -212,7 +216,7 @@ export default function AIAssistantPage() {
                     <Descriptions size="small" column={1} bordered>
                       <Descriptions.Item label="نام">{selectedNode.name}</Descriptions.Item>
                       <Descriptions.Item label="آدرس">{selectedNode.address || 'ثبت نشده'}</Descriptions.Item>
-                      <Descriptions.Item label="وضعیت">{selectedNode.enable ? 'فعال' : 'غیرفعال یا نامشخص'}</Descriptions.Item>
+                      <Descriptions.Item label="وضعیت">{selectedNode.enable === true ? 'فعال' : selectedNode.enable === false ? 'غیرفعال' : 'نامشخص'}</Descriptions.Item>
                     </Descriptions>
                   )}
                   <Button type="primary" icon={<ThunderboltOutlined />} onClick={runDiagnostics} loading={busy} disabled={!selectedNode || isLoading || isError}>
