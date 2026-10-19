@@ -447,7 +447,7 @@ func (a *NodeController) repair(c *gin.Context) {
 		return
 	}
 	result.After = strings.ToLower(strings.TrimSpace(after.XrayState))
-	result.Verified = result.After != "error" && result.After != "stop" && result.After != "stopped" && result.After != ""
+	result.Verified = result.After == "running"
 	if result.Verified {
 		result.Message = "Xray responded after the restart request."
 	} else {
