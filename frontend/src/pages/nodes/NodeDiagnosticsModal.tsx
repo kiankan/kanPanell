@@ -64,11 +64,11 @@ export default function NodeDiagnosticsModal({
   const [repairResult, setRepairResult] = useState<RepairResult | null>(null);
   const [error, setError] = useState('');
 
-  const diagnose = useCallback(async () => {
+  const diagnose = useCallback(async (clearPreviousRepair = true) => {
     if (!node?.id) return;
     setLoading(true);
     setError('');
-    setRepairResult(null);
+    if (clearPreviousRepair) setRepairResult(null);
     try {
       const response = await HttpUtil.post<DiagnosticReport>(
         `/panel/api/nodes/diagnose/${node.id}`,
@@ -108,7 +108,7 @@ export default function NodeDiagnosticsModal({
       }
       setRepairResult(response.obj);
       setConfirmAction(null);
-      await diagnose();
+      await diagnose(false);
       onRepaired();
     } catch (e) {
       setError(e instanceof Error ? e.message : t('pages.nodes.diagnostics.repairFailed'));
