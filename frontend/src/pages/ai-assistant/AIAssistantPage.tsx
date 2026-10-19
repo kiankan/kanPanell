@@ -104,7 +104,7 @@ export default function AIAssistantPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const { data: nodes = [], isLoading, refetch } = useQuery({
+  const { data: nodes = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['ai-assistant', 'nodes'],
     queryFn: async () => {
       const response = await HttpUtil.get<ApiMessage<NodeRecord[]>>('/panel/api/nodes/list', undefined, { silent: true });
@@ -136,10 +136,11 @@ export default function AIAssistantPage() {
       setDiagnostic({ ...result, observedAt: new Date().toISOString(), approved: false });
       setNotice('تحلیل بر اساس داده‌های قابل‌دسترسی پنل و پاسخ Probe انجام شد. هیچ تغییری روی نود اعمال نشده است.');
       await refetch();
-    } catch {
-      const result = analyzeNode(selectedNode, { status: 'unreachable', error: 'درخواست بررسی نود ناموفق بود.' });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'درخواست بررسی نود ناموفق بود.';
+      const result = analyzeNode(selectedNode, { status: 'unreachable', error: detail });
       setDiagnostic({ ...result, observedAt: new Date().toISOString(), approved: false });
-      setNotice('جمع‌آوری اطلاعات به خطا خورد؛ نتیجه را قبل از هر اقدام بررسی کنید.');
+      setNotice(`جمع‌آوری اطلاعات به خطا خورد: ${detail}`);
     } finally {
       setBusy(false);
     }
@@ -178,6 +179,16 @@ export default function AIAssistantPage() {
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={14}>
             <Card title={<Space><ExperimentOutlined /> عیب‌یابی نود</Space>} className="ai-assistant-card">
+              {isError && (
+                <Alert
+                  showIcon
+                  type="error"
+                  message="دریافت فهرست نودها ناموفق بود"
+                  description={error instanceof Error ? error.message : 'خطای نامشخص در API پنل'}
+                  action={<Button size="small" onClick={() => void refetch()}>تلاش دوباره</Button>}
+                  style={{ marginBottom: 16 }}
+                />
+              )}
               <Spin spinning={isLoading}>
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                   <Text strong>نود موردنظر</Text>
@@ -202,7 +213,7 @@ export default function AIAssistantPage() {
                       <Descriptions.Item label="وضعیت">{selectedNode.enable ? 'فعال' : 'غیرفعال یا نامشخص'}</Descriptions.Item>
                     </Descriptions>
                   )}
-                  <Button type="primary" icon={<ThunderboltOutlined />} onClick={runDiagnostics} loading={busy} disabled={!selectedNode}>
+                  <Button type="primary" icon={<ThunderboltOutlined />} onClick={runDiagnostics} loading={busy} disabled={!selectedNode || isLoading || isError}>
                     اجرای بررسی از طریق API
                   </Button>
                 </Space>
