@@ -131,7 +131,9 @@ export default function AIAssistantPage() {
     setNotice(null);
     try {
       const response = await HttpUtil.post<ApiMessage<ProbeResult>>(`/panel/api/nodes/probe/${selectedNode.id}`);
-      const probe = response?.success ? response.obj : undefined;
+      const probe = response?.success
+        ? response.obj
+        : { status: 'error', error: response?.msg || 'API بررسی نود پاسخ موفق نداد.' };
       const result = analyzeNode(selectedNode, probe);
       setDiagnostic({ ...result, observedAt: new Date().toISOString(), approved: false });
       setNotice('تحلیل بر اساس داده‌های قابل‌دسترسی پنل و پاسخ Probe انجام شد. هیچ تغییری روی نود اعمال نشده است.');
