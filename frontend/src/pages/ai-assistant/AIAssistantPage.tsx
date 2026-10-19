@@ -107,7 +107,7 @@ export default function AIAssistantPage() {
     queryFn: async () => {
       const response = await HttpUtil.get('/panel/api/nodes/list', undefined, { silent: true });
       if (!response?.success) throw new Error(response?.msg || 'Failed to fetch nodes');
-      const validated = parseMsg(response, NodeListSchema, 'nodes/list');
+      const validated = parseMsg(response, NodeListSchema, 'nodes/list', { strict: true });
       if (!Array.isArray(validated.obj)) throw new Error('Invalid nodes response');
       return validated.obj;
     },
@@ -130,7 +130,7 @@ export default function AIAssistantPage() {
     setNotice(null);
     try {
       const rawResponse = await HttpUtil.post(`/panel/api/nodes/probe/${selectedNode.id}`);
-      const response = parseMsg(rawResponse, ProbeResultSchema, 'nodes/probe');
+      const response = parseMsg(rawResponse, ProbeResultSchema, 'nodes/probe', { strict: true });
       const probe: ProbeResult = response?.success
         ? response.obj
         : { status: 'error', error: response?.msg || 'API بررسی نود پاسخ موفق نداد.' };
