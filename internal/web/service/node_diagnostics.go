@@ -75,9 +75,10 @@ func BuildNodeDiagnosticReport(node *model.Node, patch HeartbeatPatch, probeErr 
 			detail = patch.LastError
 		}
 		report.Findings = append(report.Findings, NodeDiagnosticFinding{
-			Code:                     "panel_unreachable",
-			Severity:             "error",
-			Title:          "Node panel API is unreachable", Detail: detail,
+			Code:           "panel_unreachable",
+			Severity:       "error",
+			Title:          "Node panel API is unreachable",
+			Detail:         detail,
 			Recommendation: "Verify the scheme, address, API port, base path, API token or mTLS setup, TLS verification mode, and network/firewall access. Re-run diagnosis after correcting access.",
 		})
 		return report
