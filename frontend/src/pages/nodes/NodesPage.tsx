@@ -37,6 +37,35 @@ import { setMessageInstance } from '@/utils/messageBus';
 import { HttpUtil } from '@/utils';
 import type { PanelUpdateInfo } from '../index/PanelUpdateModal';
 
+interface NodeDiagnosticFinding {
+  code: string;
+  severity: 'error' | 'warning' | 'info' | string;
+  message: string;
+  recommendation: string;
+}
+
+interface NodeDiagnosis {
+  nodeId: number;
+  nodeName: string;
+  status: string;
+  latencyMs: number;
+  xrayState: string;
+  xrayError: string;
+  localInboundCount: number;
+  remoteInboundCount: number;
+  syncPending: boolean;
+  repairAvailable: boolean;
+  summary: string;
+  findings: NodeDiagnosticFinding[];
+  repairPlan: string[];
+}
+
+interface NodeRepairResult {
+  nodeId: number;
+  queued: boolean;
+  message: string;
+}
+
 // Confirm-dialog body that lets the operator pick the stable or dev channel for
 // a node panel update. Reports changes via onChange so the imperative
 // modal.confirm onOk can read the latest choice through a ref.
@@ -107,6 +136,11 @@ export default function NodesPage() {
   const [trustCa, setTrustCa] = useState('');
   const [copyingCa, setCopyingCa] = useState(false);
   const [savingTrustCa, setSavingTrustCa] = useState(false);
+  const [diagnosisOpen, setDiagnosisOpen] = useState(false);
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [repairing, setRepairing] = useState(false);
+  const [diagnosisNode, setDiagnosisNode] = useState<NodeRecord | null>(null);
+  const [diagnosis, setDiagnosis] = useState<NodeDiagnosis | null>(null);
 
   const onCopyNodeCa = useCallback(async () => {
     setCopyingCa(true);
@@ -198,6 +232,51 @@ export default function NodesPage() {
     },
     [probe, t, messageApi, refetch],
   );
+
+
+  const onSmartDiagnose = useCallback(
+    async (node: NodeRecord) => {
+      setDiagnosisNode(node);
+      setDiagnosis(null);
+      setDiagnosisOpen(true);
+      setDiagnosing(true);
+      try {
+        const msg = await HttpUtil.post<NodeDiagnosis>(`/panel/api/nodes/diagnose/${node.id}`);
+        if (msg?.success && msg.obj) {
+          setDiagnosis(msg.obj);
+        } else {
+          messageApi.error(msg?.msg || 'Could not diagnose this node.');
+        }
+      } catch {
+        messageApi.error('Could not diagnose this node.');
+      } finally {
+        setDiagnosing(false);
+      }
+    },
+    [messageApi],
+  );
+
+  const onApplyRepair = useCallback(async () => {
+    if (!diagnosisNode || !diagnosis?.repairAvailable || repairing) return;
+    setRepairing(true);
+    try {
+      const msg = await HttpUtil.post<NodeRepairResult>(
+        `/panel/api/nodes/repair/${diagnosisNode.id}`,
+        { confirm: true },
+      );
+      if (msg?.success && msg.obj?.queued) {
+        messageApi.success(msg.obj.message || 'Inbound reconciliation queued.');
+        setDiagnosisOpen(false);
+        refetch();
+      } else {
+        messageApi.error(msg?.msg || 'Repair could not be queued.');
+      }
+    } catch {
+      messageApi.error('Repair could not be queued.');
+    } finally {
+      setRepairing(false);
+    }
+  }, [diagnosisNode, diagnosis, repairing, messageApi, refetch]);
 
   const onToggleEnable = useCallback(
     async (node: NodeRecord, next: boolean) => {
@@ -358,6 +437,7 @@ export default function NodesPage() {
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onProbe={onProbe}
+                      onSmartDiagnose={onSmartDiagnose}
                       onToggleEnable={onToggleEnable}
                       onUpdateNode={onUpdateNode}
                       onUpdateSelected={onUpdateSelected}
@@ -379,6 +459,61 @@ export default function NodesPage() {
           save={onSave}
           onOpenChange={setFormOpen}
         />
+
+
+        <Modal
+          open={diagnosisOpen}
+          title={diagnosisNode ? `Smart diagnostics — ${diagnosisNode.name || diagnosisNode.address || diagnosisNode.id}` : 'Smart diagnostics'}
+          confirmLoading={repairing}
+          okText="Apply repair plan"
+          cancelText="Close"
+          okButtonProps={{ disabled: diagnosing || !diagnosis?.repairAvailable || repairing }}
+          onOk={onApplyRepair}
+          onCancel={() => {
+            if (!repairing) setDiagnosisOpen(false);
+          }}
+          destroyOnHidden
+        >
+          {diagnosing ? (
+            <Spin tip="Checking panel API, Xray health and inbound synchronization..." />
+          ) : diagnosis ? (
+            <div>
+              <Alert
+                type={diagnosis.findings.some((finding) => finding.severity === 'error') ? 'error' : diagnosis.findings.some((finding) => finding.severity === 'warning') ? 'warning' : 'success'}
+                showIcon
+                message={diagnosis.summary}
+                description={`Panel API: ${diagnosis.status}; Xray: ${diagnosis.xrayState || 'unknown'}; inbound count: panel ${diagnosis.localInboundCount}, node ${diagnosis.remoteInboundCount}.`}
+                style={{ marginBottom: 16 }}
+              />
+              <Typography.Title level={5}>Findings</Typography.Title>
+              {diagnosis.findings.map((finding) => (
+                <Alert
+                  key={finding.code}
+                  type={finding.severity === 'error' ? 'error' : finding.severity === 'warning' ? 'warning' : 'info'}
+                  showIcon
+                  message={finding.message}
+                  description={finding.recommendation}
+                  style={{ marginBottom: 8 }}
+                />
+              ))}
+              <Typography.Title level={5}>Proposed repair plan</Typography.Title>
+              {diagnosis.repairPlan.length ? (
+                <ol style={{ paddingInlineStart: 24 }}>
+                  {diagnosis.repairPlan.map((step) => <li key={step}>{step}</li>)}
+                </ol>
+              ) : (
+                <Typography.Paragraph type="secondary">
+                  No safe API-only repair is available for the current state.
+                </Typography.Paragraph>
+              )}
+              <Typography.Paragraph type="secondary">
+                Nothing is changed until you select “Apply repair plan”. This action only queues synchronization of panel-managed inbounds; it does not restart Xray or change ports, TLS, or Reality settings.
+              </Typography.Paragraph>
+            </div>
+          ) : (
+            <Typography.Paragraph type="secondary">No diagnostic result is available.</Typography.Paragraph>
+          )}
+        </Modal>
 
         <Modal
           open={mtlsOpen}
