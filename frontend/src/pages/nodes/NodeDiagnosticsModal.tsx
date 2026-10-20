@@ -171,7 +171,7 @@ export default function NodeDiagnosticsModal({
                     : t('pages.nodes.diagnostics.inboundUnavailable')}
                 </Descriptions.Item>
               </Descriptions>
-              <Divider orientation="start">{t('pages.nodes.diagnostics.findings')}</Divider>
+              <Divider titlePlacement="start">{t('pages.nodes.diagnostics.findings')}</Divider>
               <List
                 dataSource={report.findings || []}
                 locale={{ emptyText: t('pages.nodes.diagnostics.noFindings') }}
@@ -202,7 +202,9 @@ export default function NodeDiagnosticsModal({
               />
               {report.repairActions?.length > 0 && (
                 <>
-                  <Divider orientation="left">{t('pages.nodes.diagnostics.repairPlan')}</Divider>
+                  <Divider titlePlacement="start">
+                    {t('pages.nodes.diagnostics.repairPlan')}
+                  </Divider>
                   {report.repairActions.map((action) => (
                     <Alert
                       key={action.id}
