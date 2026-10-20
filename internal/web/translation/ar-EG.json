@@ -1193,7 +1193,9 @@
           "error": "Error",
           "warning": "Warning",
           "info": "Info"
-        }
+        },
+        "aiTitle": "AI explanation (advisory)",
+        "aiAdvisory": "Generated from sanitized health codes only. It is advisory and never runs a repair."
       }
     },
     "settings": {

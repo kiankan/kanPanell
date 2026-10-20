@@ -371,7 +371,33 @@ func (a *NodeController) diagnose(c *gin.Context) {
 		inboundCount = len(options)
 	}
 	report := service.BuildNodeDiagnosticReport(n, patch, probeErr, inboundCount, inboundErr)
+	if probeErr == nil {
+		completeCtx, completeCancel := context.WithTimeout(c.Request.Context(), 6*time.Second)
+		a.nodeService.CompleteNodeDiagnosticReport(completeCtx, id, &report)
+		completeCancel()
+	}
 	jsonObj(c, report, nil)
+}
+
+// queueInboundSync handles the inbound_sync repair action. It only queues the
+// panel's existing reconciliation (after re-checking the node is enabled and
+// reachable); the result is intentionally reported as not yet verified, since
+// the node-sync worker applies it asynchronously.
+func (a *NodeController) queueInboundSync(c *gin.Context, id int) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 8*time.Second)
+	defer cancel()
+	msg, err := a.nodeService.QueueInboundSync(ctx, id)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonObj(c, nodeRepairExecution{
+		ActionID: service.RepairActionInboundSync,
+		Accepted: true,
+		Verified: false,
+		Message:  msg,
+		Before:   "out_of_sync",
+	}, nil)
 }
 
 type nodeRepairRequest struct {
@@ -402,7 +428,12 @@ func (a *NodeController) repair(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), fmt.Errorf("repair action is required"))
 		return
 	}
-	if req.ActionID != "restart_xray" {
+	switch req.ActionID {
+	case "restart_xray":
+	case service.RepairActionInboundSync:
+		a.queueInboundSync(c, id)
+		return
+	default:
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), fmt.Errorf("unsupported repair action"))
 		return
 	}

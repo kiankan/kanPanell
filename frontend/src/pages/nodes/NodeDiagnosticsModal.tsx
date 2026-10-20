@@ -44,6 +44,9 @@ interface DiagnosticReport {
   inboundStatus: string;
   findings: DiagnosticFinding[];
   repairActions: RepairAction[];
+  aiEnabled?: boolean;
+  aiExplanation?: string;
+  aiRecommendations?: string[];
 }
 
 interface RepairResult {
@@ -200,6 +203,26 @@ export default function NodeDiagnosticsModal({
                   </List.Item>
                 )}
               />
+              {report.aiEnabled && report.aiExplanation && (
+                <>
+                  <Divider titlePlacement="start">{t('pages.nodes.diagnostics.aiTitle')}</Divider>
+                  <Alert
+                    type="info"
+                    showIcon
+                    message={report.aiExplanation}
+                    description={
+                      <Space orientation="vertical" size={2}>
+                        {(report.aiRecommendations || []).map((item) => (
+                          <Typography.Text key={item}>• {item}</Typography.Text>
+                        ))}
+                        <Typography.Text type="secondary">
+                          {t('pages.nodes.diagnostics.aiAdvisory')}
+                        </Typography.Text>
+                      </Space>
+                    }
+                  />
+                </>
+              )}
               {report.repairActions?.length > 0 && (
                 <>
                   <Divider titlePlacement="start">
