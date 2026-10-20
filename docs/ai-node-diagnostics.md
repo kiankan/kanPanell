@@ -3,6 +3,7 @@
 ## Current implementation scope
 
 The AI Assistant panel adds a node diagnostics workbench that only calls existing panel APIs:
+
 - `GET /panel/api/nodes` for the node list
 - `POST /panel/api/nodes/probe/{id}` for connectivity/status probing
 
@@ -13,6 +14,7 @@ It displays observed findings, evidence, a proposed next-step plan, severity, an
 The current repository exposes node probe and configuration/update APIs, but there is no dedicated server-side repair-plan API that validates a limited set of safe repair operations, requires a time-bound approval, and produces an immutable audit record. Directly wiring an LLM to generic node mutations would allow model output to cause unreviewed or unsafe changes.
 
 Before enabling repairs, implement a server-side allowlist with:
+
 1. A diagnostic snapshot ID and versioned plan.
 2. Explicit, authenticated confirmation bound to the exact plan hash and node ID.
 3. A short approval expiry and replay prevention.
