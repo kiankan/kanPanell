@@ -126,7 +126,8 @@
     "openMenu": "باز کردن منو",
     "pinSidebar": "ثابت کردن نوار کناری",
     "unpinSidebar": "برداشتن تثبیت نوار کناری",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "aiAssistant": "دستیار هوش مصنوعی"
   },
   "pages": {
     "login": {

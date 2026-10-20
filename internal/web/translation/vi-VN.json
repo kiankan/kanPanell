@@ -126,7 +126,8 @@
     "openMenu": "Mở menu",
     "pinSidebar": "Ghim thanh bên",
     "unpinSidebar": "Bỏ ghim thanh bên",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "aiAssistant": "AI Assistant"
   },
   "pages": {
     "login": {

@@ -126,7 +126,8 @@
     "openMenu": "Buka menu",
     "pinSidebar": "Sematkan bilah sisi",
     "unpinSidebar": "Lepas sematan bilah sisi",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "aiAssistant": "AI Assistant"
   },
   "pages": {
     "login": {

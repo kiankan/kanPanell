@@ -13,6 +13,7 @@ import {
   CodeOutlined,
   CrownOutlined,
   DashboardOutlined,
+  ExperimentOutlined,
   DatabaseOutlined,
   DiscordOutlined,
   ExportOutlined,
@@ -61,6 +62,7 @@ let hoveredAcrossRemounts = false;
 
 type IconName =
   | 'dashboard'
+  | 'ai'
   | 'inbound'
   | 'team'
   | 'groups'
@@ -76,6 +78,7 @@ type IconName =
 
 const iconByName: Record<IconName, ComponentType> = {
   dashboard: DashboardOutlined,
+  ai: ExperimentOutlined,
   inbound: ImportOutlined,
   team: TeamOutlined,
   groups: TagsOutlined,
@@ -229,6 +232,7 @@ export default function AppSidebar() {
       { key: '/clients', icon: 'team', title: t('menu.clients') },
       { key: '/groups', icon: 'groups', title: t('menu.groups') },
       { key: '/nodes', icon: 'cluster', title: t('menu.nodes') },
+      { key: '/ai-assistant', icon: 'ai', title: t('menu.aiAssistant') || 'AI Assistant' },
       { key: '/hosts', icon: 'hosts', title: t('menu.hosts') },
       { key: '/outbound', icon: 'outbound', title: t('menu.outbounds') },
       { key: '/routing', icon: 'routing', title: t('menu.routing') },
