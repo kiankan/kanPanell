@@ -1,0 +1,33 @@
+name: Tmp regen on branch
+on:
+  push:
+    branches: [feat/nodes-sync-repair-and-ai]
+permissions:
+  contents: write
+jobs:
+  regen:
+    if: ${{ !contains(github.event.head_commit.message, 'regenerate openapi') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run gen
+        working-directory: frontend
+      - name: Commit generated files back to THIS branch only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet && git diff --cached --quiet; then echo "No changes"; else
+            git add frontend/src/generated frontend/public/openapi.json
+            git commit --no-verify -m "chore: regenerate openapi/schemas (auto, branch only)"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
