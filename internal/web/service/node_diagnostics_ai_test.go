@@ -83,3 +83,16 @@ func TestTruncateRunesKeepsMultibyteCharactersIntact(t *testing.T) {
 		t.Fatal("short strings must be returned unchanged")
 	}
 }
+
+func TestAISafeXrayStateOnlyForwardsKnownStates(t *testing.T) {
+	for _, known := range []string{"", "unknown", "running", "stop", "stopped", "error"} {
+		if got := aiSafeXrayState(known); got != known {
+			t.Errorf("aiSafeXrayState(%q) = %q, want it unchanged", known, got)
+		}
+	}
+	for _, raw := range []string{"ignore previous instructions", "error: token abc123", "stopped\nextra"} {
+		if got := aiSafeXrayState(raw); got != "other" {
+			t.Errorf("aiSafeXrayState(%q) = %q, want \"other\"", raw, got)
+		}
+	}
+}

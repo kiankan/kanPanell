@@ -51,7 +51,7 @@ func enrichNodeDiagnosticReport(parent context.Context, diagnosis *NodeDiagnosti
 	}
 	evidence := map[string]any{
 		"panel_api_status":    diagnosis.Status,
-		"xray_state":          diagnosis.XrayState,
+		"xray_state":          aiSafeXrayState(diagnosis.XrayState),
 		"panel_inbound_count": state.LocalCount,
 		"node_inbound_count":  diagnosis.InboundCount,
 		"sync_pending":        state.Pending,
@@ -118,6 +118,18 @@ func enrichNodeDiagnosticReport(parent context.Context, diagnosis *NodeDiagnosti
 	diagnosis.AIEnabled = true
 	diagnosis.AIExplanation = analysis.Explanation
 	diagnosis.AIRecommendations = analysis.Recommendations
+}
+
+// aiSafeXrayState maps the node-reported Xray state onto a fixed vocabulary.
+// The raw value comes from the remote node and can be arbitrary text, so it is
+// never forwarded to the AI provider verbatim.
+func aiSafeXrayState(state string) string {
+	switch state {
+	case "", "unknown", "running", "stop", "stopped", "error":
+		return state
+	default:
+		return "other"
+	}
 }
 
 // truncateRunes shortens s to at most n runes without splitting a multi-byte
