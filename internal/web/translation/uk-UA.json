@@ -1166,7 +1166,35 @@
       "pinnedCertPlaceholder": "SHA-256 у base64 або hex",
       "fetchPin": "Отримати",
       "pinFetched": "Поточний сертифікат вузла отримано",
-      "pinFetchFailed": "Не вдалося отримати сертифікат"
+      "pinFetchFailed": "Не вдалося отримати сертифікат",
+      "diagnostics": {
+        "button": "Smart diagnostics",
+        "title": "Node diagnostics — {name}",
+        "intro": "Runs live checks against the node panel API and inbound list. Findings are explainable health rules; no external AI provider is called in this version.",
+        "failed": "Could not run node diagnostics",
+        "runAgain": "Run diagnosis again",
+        "panelApi": "Panel API",
+        "xray": "Xray state",
+        "inbounds": "Remote inbounds",
+        "inboundCount": "{{count}} inbound(s) found",
+        "inboundUnavailable": "Could not inspect inbounds",
+        "findings": "Findings and recommendations",
+        "noFindings": "No findings were returned",
+        "recommendation": "Recommended next step",
+        "repairPlan": "Proposed repair plan",
+        "reviewAndApply": "Review and apply",
+        "confirmTitle": "Confirm remote repair",
+        "confirmRepair": "Confirm and restart",
+        "confirmHint": "This sends a restart request to Xray through the authenticated node panel API. Active connections may be interrupted briefly. No inbound settings will be changed.",
+        "repairFailed": "The repair request failed",
+        "before": "Before",
+        "after": "After",
+        "severity": {
+          "error": "Error",
+          "warning": "Warning",
+          "info": "Info"
+        }
+      }
     },
     "settings": {
       "defaultTag": "Типово",
