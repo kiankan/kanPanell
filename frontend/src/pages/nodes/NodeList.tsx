@@ -19,6 +19,7 @@ import {
   SafetyCertificateOutlined,
   TeamOutlined,
   ThunderboltOutlined,
+  ToolOutlined,
 } from '@ant-design/icons';
 
 import NodeHistoryPanel from './NodeHistoryPanel';
@@ -39,6 +40,7 @@ interface NodeListProps {
   onEdit: (node: NodeRecord) => void;
   onDelete: (node: NodeRecord) => void;
   onProbe: (node: NodeRecord) => void;
+  onDiagnose?: (node: NodeRecord) => void;
   onToggleEnable: (node: NodeRecord, next: boolean) => void;
   onUpdateNode: (node: NodeRecord) => void;
   onUpdateSelected: () => void;
@@ -175,6 +177,7 @@ export default function NodeList({
   onEdit,
   onDelete,
   onProbe,
+  onDiagnose,
   onToggleEnable,
   onUpdateNode,
   onUpdateSelected,
@@ -244,7 +247,7 @@ export default function NodeList({
       {
         title: t('pages.nodes.actions'),
         align: 'center',
-        width: 190,
+        width: 220,
         render: (_value, record) =>
           record.transitive ? (
             <Tooltip
@@ -266,6 +269,16 @@ export default function NodeList({
                   icon={<ThunderboltOutlined />}
                   aria-label={t('pages.nodes.probe')}
                   onClick={() => onProbe(record)}
+                />
+              </Tooltip>
+              <Tooltip title={t('pages.nodes.diagnostics.button')}>
+                <Button
+                  type="text"
+                  size="small"
+                  style={{ fontSize: 16 }}
+                  icon={<ToolOutlined />}
+                  aria-label={t('pages.nodes.diagnostics.button')}
+                  onClick={() => onDiagnose?.(record)}
                 />
               </Tooltip>
               {isUpdateEligible(record) && (
@@ -528,6 +541,7 @@ export default function NodeList({
       latestVersion,
       onToggleEnable,
       onProbe,
+      onDiagnose,
       onEdit,
       onDelete,
       onUpdateNode,
