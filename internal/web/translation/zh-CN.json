@@ -126,7 +126,8 @@
     "openMenu": "打开菜单",
     "pinSidebar": "固定侧边栏",
     "unpinSidebar": "取消固定侧边栏",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "aiAssistant": "AI Assistant"
   },
   "pages": {
     "login": {

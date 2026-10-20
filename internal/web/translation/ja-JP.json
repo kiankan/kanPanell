@@ -126,7 +126,8 @@
     "openMenu": "メニューを開く",
     "pinSidebar": "サイドバーを固定",
     "unpinSidebar": "サイドバーの固定を解除",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "aiAssistant": "AI Assistant"
   },
   "pages": {
     "login": {
