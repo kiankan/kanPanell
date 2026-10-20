@@ -48,3 +48,54 @@ func TestBuildNodeDiagnosticReportNoInboundDoesNotInventRepair(t *testing.T) {
 		t.Fatalf("expected no_inbounds finding, got %+v", report.Findings)
 	}
 }
+
+func okReport(remote int) NodeDiagnosticReport {
+	return BuildNodeDiagnosticReport(&model.Node{Id: 9, Name: "edge-9"}, HeartbeatPatch{Status: "online", XrayState: "running"}, nil, remote, nil)
+}
+
+func hasFinding(r NodeDiagnosticReport, code string) bool {
+	for _, f := range r.Findings {
+		if f.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
+func TestApplyInboundSyncFindingsOffersRepairOnlyOnDrift(t *testing.T) {
+	report := okReport(2)
+	ApplyInboundSyncFindings(&report, NodeInboundSyncState{Enabled: true, LocalCount: 2})
+	if len(report.RepairActions) != 0 || hasFinding(report, "inbound_count_mismatch") {
+		t.Fatalf("matching counts must not offer a repair: %+v", report)
+	}
+
+	drift := okReport(1)
+	ApplyInboundSyncFindings(&drift, NodeInboundSyncState{Enabled: true, LocalCount: 3})
+	if !hasFinding(drift, "inbound_count_mismatch") {
+		t.Fatalf("expected inbound_count_mismatch, got %+v", drift.Findings)
+	}
+	found := false
+	for _, a := range drift.RepairActions {
+		if a.ID == RepairActionInboundSync {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected inbound_sync action on drift, got %+v", drift.RepairActions)
+	}
+}
+
+func TestApplyInboundSyncFindingsNeverRepairsDisabledOrUnreachableNodes(t *testing.T) {
+	disabled := okReport(1)
+	ApplyInboundSyncFindings(&disabled, NodeInboundSyncState{Enabled: false, LocalCount: 3, Pending: true})
+	if len(disabled.RepairActions) != 0 || !hasFinding(disabled, "node_disabled") {
+		t.Fatalf("disabled node must report node_disabled and offer no repair: %+v", disabled)
+	}
+
+	unreachable := BuildNodeDiagnosticReport(&model.Node{Id: 1}, HeartbeatPatch{Status: "offline"}, errors.New("refused"), 0, nil)
+	before := len(unreachable.Findings)
+	ApplyInboundSyncFindings(&unreachable, NodeInboundSyncState{Enabled: true, LocalCount: 5, Pending: true})
+	if len(unreachable.RepairActions) != 0 || len(unreachable.Findings) != before {
+		t.Fatalf("unreachable node must be left untouched: %+v", unreachable)
+	}
+}

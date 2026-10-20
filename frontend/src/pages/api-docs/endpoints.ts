@@ -1788,7 +1788,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/nodes/repair/:id',
         summary:
-          'Execute an explicitly confirmed allowlisted node repair. Currently only restarts Xray when a fresh probe verifies the node is reachable and Xray is stopped or in error; the result includes post-action verification.',
+          'Execute an explicitly confirmed allowlisted node repair. Supported actionIds: restart_xray (only when a fresh probe verifies the node is reachable and Xray is stopped or in error; the result includes post-action verification) and inbound_sync (re-checks the node is enabled and reachable, then queues the existing panel-managed inbound reconciliation; reported as not yet verified because the node-sync worker applies it asynchronously).',
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Node ID.' }],
         body: '{ "actionId": "restart_xray" }',
         response:

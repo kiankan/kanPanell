@@ -42,6 +42,12 @@ type NodeDiagnosticReport struct {
 	InboundStatus string                  `json:"inboundStatus"`
 	Findings      []NodeDiagnosticFinding `json:"findings"`
 	RepairActions []NodeRepairAction      `json:"repairActions"`
+	// AI fields are populated only when an OpenAI-compatible provider is
+	// configured (see node_diagnostics_ai.go); they are advisory text and
+	// never drive a repair.
+	AIEnabled         bool     `json:"aiEnabled"`
+	AIExplanation     string   `json:"aiExplanation,omitempty"`
+	AIRecommendations []string `json:"aiRecommendations,omitempty"`
 }
 
 // BuildNodeDiagnosticReport applies deterministic rules to the latest live
